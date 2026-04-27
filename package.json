@@ -1,0 +1,21 @@
+{
+  "name": "zoho-claude",
+  "version": "0.2.0",
+  "description": "Programmatic control of Zoho One via Claude Code",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "setup:oauth": "node scripts/setup-oauth.js",
+    "test:connection": "node scripts/test-connection.js",
+    "refresh-token": "node scripts/refresh-token.js",
+    "discover": "node scripts/discover.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0"
+  }
+}

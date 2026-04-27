@@ -1,0 +1,35 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+tokens.json
+*.pem
+*.key
+
+# Logs
+*.log
+audit.log
+logs/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+*.swp
+*.swo
+Thumbs.db
+
+# Output / temp
+dist/
+build/
+tmp/
+*.csv.bak
