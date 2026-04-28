@@ -5,7 +5,7 @@
 import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
-import { sendRenewalEligible, sendLeadAssigned } from '../../../src/mail/sender.js';
+import { sendRenewalEligible, sendRenewalOpportunity } from '../../../src/mail/sender.js';
 
 export async function run() {
   const start = Date.now();
@@ -48,10 +48,18 @@ export async function run() {
 
       // Find and update the linked Renewal record
       const { data: renewals } = await crm.coql.query(
-        `SELECT id, Renewal_Stage, Renewal_Approved_Amount FROM Renewals WHERE Original_Funding = '${funding.id}' LIMIT 1`
+        `SELECT id, Renewal_Stage, Original_Funded_Amount, Original_Factor_Rate FROM Renewals WHERE Original_Funding = '${funding.id}' LIMIT 1`
       );
 
-      const renewalAmount = renewals[0]?.Renewal_Approved_Amount ?? 0;
+      // Calculate renewal amount: original funded amount * factor rate (same as original deal)
+      let renewalAmount = 0;
+      if (renewals[0]) {
+        const origAmount = renewals[0].Original_Funded_Amount ?? 0;
+        const origFactor = renewals[0].Original_Factor_Rate ?? 0;
+        if (origAmount > 0 && origFactor > 0) {
+          renewalAmount = Math.round(origAmount * origFactor * 100) / 100;
+        }
+      }
 
       if (renewals.length > 0) {
         await crm.records.update('Renewals', [{
@@ -85,7 +93,7 @@ export async function run() {
       if (funding.Owner?.email) {
         try {
           const merchantName = funding.Name || 'Merchant';
-          await sendLeadAssigned(funding.Owner.email, funding.Owner.name, merchantName, renewalAmount);
+          await sendRenewalOpportunity(funding.Owner.email, funding.Owner.full_name || funding.Owner.name, merchantName, renewalAmount);
         } catch (err) {
           logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send rep renewal alert');
         }

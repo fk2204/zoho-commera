@@ -6,7 +6,7 @@
 import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
-import { sendFundingConfirmation } from '../../../src/mail/sender.js';
+import { sendFundingConfirmation, sendFundingAlert } from '../../../src/mail/sender.js';
 import { run as createRenewal } from './create-renewal.js';
 
 export async function run() {
@@ -53,13 +53,14 @@ export async function run() {
       }
 
       const today = new Date().toISOString().split('T')[0];
+      const fundingDate = deal.Date_Funded || today;
 
       const fundingRecord = {
         Name: `Funding - ${deal.Deal_Name}`,
         Submission: deal.id,
         Merchant: deal.Contact_Name.id,
         Business: deal.Account_Name.id,
-        Funding_Date: today,
+        Funding_Date: fundingDate,
         Funding_status: 'Active',
         Funded_Amount: deal.Funded_Amount ?? null,
         Factor_Rate: deal.Factor_Rate ?? null,
@@ -104,7 +105,7 @@ export async function run() {
           });
           if (contact?.Email) {
             const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
-            await sendFundingConfirmation(contact.Email, merchantName, deal.Funded_Amount, today);
+            await sendFundingConfirmation(contact.Email, merchantName, deal.Funded_Amount, fundingDate);
           }
         } catch (err) {
           logger.warn({ dealId: deal.id, err: err.message }, 'Failed to send funding confirmation email');
@@ -131,12 +132,41 @@ export async function run() {
         logger.debug({ accountId: biz.id, timesF, totalAmt }, 'Business funding history updated');
       }
 
-      // Update Deal with Date_Funded (Days_Lead_to_Fund calculated separately in catch-up job)
+      // Update Deal with Date_Funded and Days_Lead_to_Fund
       const dealUpdate = { id: deal.id };
-      if (!deal.Date_Funded) dealUpdate.Date_Funded = today;
+      if (!deal.Date_Funded) dealUpdate.Date_Funded = fundingDate;
+
+      // Calculate Days_Lead_to_Fund — fetch Created_Time via records.getById since COQL doesn't expose it
+      try {
+        const fullDeal = await crm.records.getById('Deals', deal.id, { fields: ['Created_Time'] });
+        if (fullDeal?.Created_Time) {
+          const createdDate = new Date(fullDeal.Created_Time);
+          const fundedDate = new Date(fundingDate);
+          const daysToFund = Math.floor((fundedDate - createdDate) / (1000 * 60 * 60 * 24));
+          if (!deal.Days_Lead_to_Fund && daysToFund >= 0) {
+            dealUpdate.Days_Lead_to_Fund = daysToFund;
+          }
+        }
+      } catch (err) {
+        logger.debug({ dealId: deal.id, err: err.message }, 'Could not fetch Deal.Created_Time for Days_Lead_to_Fund');
+      }
+
       if (Object.keys(dealUpdate).length > 1) {
         await crm.records.update('Deals', [dealUpdate]);
-        logger.debug({ dealId: deal.id }, 'Deal Date_Funded set');
+        logger.debug({ dealId: deal.id, fields: Object.keys(dealUpdate) }, 'Deal updated with funding info');
+      }
+
+      // Send alert to the assigned rep/manager
+      if (deal.Owner?.id) {
+        try {
+          const owner = await crm.users.getById(deal.Owner.id);
+          if (owner?.email) {
+            const merchantName = `${deal.Contact_Name?.name || 'Merchant'}`;
+            await sendFundingAlert(owner.email, owner.full_name, merchantName, deal.Funded_Amount, fundingDate);
+          }
+        } catch (err) {
+          logger.debug({ dealId: deal.id, err: err.message }, 'Could not send rep funding alert');
+        }
       }
 
       results.processed++;

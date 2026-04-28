@@ -369,4 +369,90 @@ export const templates = {
       </p>
     `),
   }),
+
+  // ─── Template 6: Internal Funding Alert (Rep/Manager) ───────────────────
+  fundingAlert: (repName, merchantName, fundedAmount, fundingDate) => ({
+    subject: `🎉 Deal Funded: ${merchantName}`,
+    content: wrapLayout(`
+      <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Congratulations — Deal Funded!
+      </h1>
+      <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Internal — Funding Confirmation
+      </p>
+
+      <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Hi ${repName},
+      </p>
+      <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Your deal with <strong>${merchantName}</strong> has been funded. Next steps: reach out today to confirm receipt and discuss payment schedule.
+      </p>
+
+      ${detailTable(`
+        ${detailRow("Merchant", merchantName)}
+        ${detailRow("Funded Amount", `$${(fundedAmount ?? 0).toLocaleString()}`)}
+        ${detailRow("Funding Date", fundingDate)}
+        ${detailRow("Status", "Ready for Servicing")}
+      `)}
+
+      <p style="margin:0;font-size:14px;color:${COLORS.muted};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <strong style="color:${COLORS.text};">Your action:</strong> Call the merchant, confirm payment details, and log the call in Zoho CRM.
+      </p>
+
+      ${ctaButton("Open Deal in Zoho", "https://crm.zoho.com/crm/org/tab/Deals/listview")}
+
+      <p style="margin:24px 0 0 0;font-size:14px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Best regards,<br/>
+        <strong>Commera Automation</strong>
+      </p>
+    `),
+  }),
+
+  // ─── Template 7: Renewal Opportunity Alert (Rep/Manager) ───────────────
+  renewalOpportunity: (repName, merchantName, renewalAmount) => ({
+    subject: `📈 Renewal Opportunity: ${merchantName}`,
+    content: wrapLayout(`
+      <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Renewal Opportunity Waiting
+      </h1>
+      <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Internal — Ready for Outreach
+      </p>
+
+      <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Hi ${repName},
+      </p>
+      <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <strong>${merchantName}</strong> has now paid down 50% of their original funding and is eligible for a renewal. This is a warm lead — call now to capture the deal.
+      </p>
+
+      ${detailTable(`
+        ${detailRow("Merchant", merchantName)}
+        ${detailRow("Potential Renewal Amount", `Up to $${(renewalAmount ?? 0).toLocaleString()}`)}
+        ${detailRow("Eligibility Status", "Ready for Outreach")}
+        ${detailRow("Last Funded", new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }))}
+      `)}
+
+      <p style="margin:0 0 12px 0;font-size:14px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <strong>Why this matters:</strong>
+      </p>
+      <ul style="margin:0 0 20px 0;padding-left:20px;font-size:14px;color:${COLORS.text};line-height:1.8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <li>Existing customers are 3× easier to close than new leads.</li>
+        <li>They already trust Commera and know the process.</li>
+        <li>Act fast — they may shop competing lenders.</li>
+      </ul>
+
+      ${ctaButton("Call Merchant Now", `tel:${CONTACT.phone}`)}
+
+      <p style="margin:24px 0 0 0;font-size:13px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Questions? Contact the team at
+        <a href="mailto:${CONTACT.email}" style="color:${COLORS.primary};text-decoration:none;font-weight:600;">${CONTACT.email}</a>.
+      </p>
+
+      <p style="margin:24px 0 0 0;font-size:14px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Best regards,<br/>
+        <strong>Commera Automation</strong>
+      </p>
+    `),
+  }),
 };

@@ -64,7 +64,9 @@ function lenderMatchesDeal(lender, deal, contact, account) {
     reasons.push(`State "${state}" is excluded`);
   }
 
-  if (deal.Entity_type === 'Sole Proprietorship' && !lender.Funds_Sole_Props) return false;
+  if (deal.Entity_type === 'Sole Proprietorship' && !lender.Funds_Sole_Props) {
+    reasons.push('Sole proprietorship not supported by this lender');
+  }
 
   return { match: reasons.length === 0, reasons };
 }
@@ -91,12 +93,10 @@ export async function run({ dealId = null } = {}) {
     if (deal) deals = [deal];
   } else {
     const { data } = await crm.coql.query(
-      `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender, Approved_Amount
-       FROM Deals
-       WHERE Stage != 'Funded' AND Stage != 'Dead' AND Lender = null
-       LIMIT 200`
+      `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender, Approved_Amount FROM Deals WHERE Lender is null LIMIT 200`
     );
-    deals = data;
+    // Filter out Funded and Dead deals client-side
+    deals = data.filter(d => d.Stage !== 'Funded' && d.Stage !== 'Dead');
   }
 
   logger.info({ job: 'matchLenders', queried: deals.length }, 'Job started');

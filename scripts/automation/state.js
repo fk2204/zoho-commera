@@ -39,10 +39,10 @@ export function getJobLastRun(jobName) {
   return state.jobs?.[jobName] ?? null;
 }
 
-export function markJobComplete(jobName) {
+export function markJobComplete(jobName, value) {
   const state = readState();
   if (!state.jobs) state.jobs = {};
-  state.jobs[jobName] = new Date().toISOString();
+  state.jobs[jobName] = value ?? new Date().toISOString();
   state.lastRun = new Date().toISOString();
   writeState(state);
 }

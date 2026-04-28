@@ -155,3 +155,64 @@ export async function sendRenewalEligible(merchantEmail, merchantName, renewalAm
 
   return sent;
 }
+
+/**
+ * Send internal funding alert to rep/manager
+ * @param {string} repEmail - Rep's email
+ * @param {string} repName - Rep's name
+ * @param {string} merchantName - Merchant's name
+ * @param {number} fundedAmount - Amount funded
+ * @param {string} fundingDate - Funding date (YYYY-MM-DD)
+ */
+export async function sendFundingAlert(repEmail, repName, merchantName, fundedAmount, fundingDate) {
+  if (!repEmail) {
+    logger.warn({ repName, merchantName }, 'No email for rep - skipping funding alert');
+    return false;
+  }
+
+  if (config.dryRun) {
+    logger.info({ to: repEmail, repName, merchantName, amount: fundedAmount }, '[DRY RUN] Would send funding alert');
+    return true;
+  }
+
+  const template = templates.fundingAlert(repName, merchantName, fundedAmount, fundingDate);
+  const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
+
+  if (sent) {
+    logger.info({ to: repEmail, repName, merchantName, amount: fundedAmount }, 'Funding alert sent via SMTP');
+  } else {
+    logger.error({ to: repEmail }, 'Failed to send funding alert');
+  }
+
+  return sent;
+}
+
+/**
+ * Send renewal opportunity alert to rep
+ * @param {string} repEmail - Rep's email
+ * @param {string} repName - Rep's name
+ * @param {string} merchantName - Merchant's name
+ * @param {number} renewalAmount - Potential renewal amount
+ */
+export async function sendRenewalOpportunity(repEmail, repName, merchantName, renewalAmount) {
+  if (!repEmail) {
+    logger.warn({ repName, merchantName }, 'No email for rep - skipping renewal opportunity alert');
+    return false;
+  }
+
+  if (config.dryRun) {
+    logger.info({ to: repEmail, repName, merchantName, amount: renewalAmount }, '[DRY RUN] Would send renewal opportunity alert');
+    return true;
+  }
+
+  const template = templates.renewalOpportunity(repName, merchantName, renewalAmount);
+  const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
+
+  if (sent) {
+    logger.info({ to: repEmail, repName, merchantName, amount: renewalAmount }, 'Renewal opportunity alert sent via SMTP');
+  } else {
+    logger.error({ to: repEmail }, 'Failed to send renewal opportunity alert');
+  }
+
+  return sent;
+}

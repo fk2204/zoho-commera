@@ -15,6 +15,8 @@ import { run as createFunding } from './jobs/create-funding.js';
 import { run as createRenewal } from './jobs/create-renewal.js';
 import { run as renewalCheck } from './jobs/renewal-check.js';
 import { run as daysToFund } from './jobs/days-to-fund.js';
+import { run as matchLenders } from './jobs/match-lenders.js';
+import { run as leadAssign } from './jobs/lead-assign.js';
 
 const JOBS = [
   { name: 'sendApplicationConfirmation', fn: sendApplicationConfirmation, stateKey: 'sendApplicationConfirmation' },
@@ -22,10 +24,12 @@ const JOBS = [
   { name: 'tibBand',       fn: tibBand,       stateKey: 'tibBand' },
   { name: 'payback',       fn: payback,       stateKey: 'payback' },
   { name: 'commission',    fn: commission,    stateKey: 'commission' },
+  { name: 'matchLenders',  fn: matchLenders,  stateKey: 'matchLenders' },
   { name: 'createFunding', fn: createFunding, stateKey: 'createFunding' },
   { name: 'createRenewal', fn: createRenewal, stateKey: 'createRenewal' },
   { name: 'renewalCheck',  fn: renewalCheck,  stateKey: 'renewalCheck' },
   { name: 'daysToFund',    fn: daysToFund,    stateKey: 'daysToFund' },
+  { name: 'leadAssign',    fn: leadAssign,    stateKey: 'leadAssignIndex' },
 ];
 
 export async function runAll() {
