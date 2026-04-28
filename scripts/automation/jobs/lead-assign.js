@@ -6,6 +6,7 @@ import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
 import { getJobLastRun, markJobComplete } from '../state.js';
+import { sendLeadAssigned } from '../../../src/mail/sender.js';
 
 export async function run() {
   const start = Date.now();
@@ -27,7 +28,7 @@ export async function run() {
 
   // Get unassigned Leads (Owner not set or empty)
   const { data: unassignedLeads } = await crm.coql.query(
-    `SELECT id, Last_Name, Owner
+    `SELECT id, Last_Name, First_Name, Amount, Owner
      FROM Leads
      WHERE Owner = '' OR Owner is null
      LIMIT 200`
@@ -48,14 +49,27 @@ export async function run() {
       const rep = reps[repIndex];
       repIndex = (repIndex + 1) % reps.length;
 
+      const merchantName = `${lead.First_Name || ''} ${lead.Last_Name || ''}`.trim() || lead.Last_Name || 'Merchant';
+
       if (config.dryRun) {
-        logger.info({ leadId: lead.id, Last_Name: lead.Last_Name, assignedTo: rep.full_name }, '[DRY RUN] Would assign lead');
+        logger.info({ leadId: lead.id, merchantName, assignedTo: rep.full_name }, '[DRY RUN] Would assign lead');
+        logger.info({ leadId: lead.id, repEmail: rep.email, merchantName }, '[DRY RUN] Would send lead assigned alert');
         results.processed++;
         continue;
       }
 
       await crm.records.update('Leads', [{ id: lead.id, Owner: rep.id }]);
-      logger.info({ leadId: lead.id, Last_Name: lead.Last_Name, assignedTo: rep.full_name }, 'Lead assigned');
+      logger.info({ leadId: lead.id, merchantName, assignedTo: rep.full_name }, 'Lead assigned');
+
+      // Notify the assigned rep via email
+      if (rep.email) {
+        try {
+          await sendLeadAssigned(rep.email, rep.first_name || rep.full_name, merchantName, lead.Amount ?? 0);
+        } catch (err) {
+          logger.warn({ leadId: lead.id, repEmail: rep.email, err: err.message }, 'Could not send lead assignment alert');
+        }
+      }
+
       results.processed++;
     } catch (err) {
       logger.error({ leadId: lead.id, err: err.message }, 'Lead assign failed for record');

@@ -5,6 +5,7 @@
 import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
+import { sendRenewalEligible, sendLeadAssigned } from '../../../src/mail/sender.js';
 
 export async function run() {
   const start = Date.now();
@@ -14,7 +15,7 @@ export async function run() {
 
   // Find active Fundings at 50%+ paydown that aren't marked eligible yet
   const { data: fundings } = await crm.coql.query(
-    `SELECT id, Name, Paydown, Renewal_Eligible
+    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner
      FROM Fundings
      WHERE Funding_status = 'Active'
      AND Paydown >= 50
@@ -32,6 +33,8 @@ export async function run() {
 
       if (config.dryRun) {
         logger.info({ fundingId: funding.id, paydown: funding.Paydown }, '[DRY RUN] Would mark Renewal_Eligible');
+        logger.info({ fundingId: funding.id, merchantId: funding.Merchant?.id }, '[DRY RUN] Would send renewal eligible email to merchant');
+        logger.info({ fundingId: funding.id, repId: funding.Owner?.id }, '[DRY RUN] Would send renewal opportunity alert to rep');
         results.processed++;
         continue;
       }
@@ -45,8 +48,10 @@ export async function run() {
 
       // Find and update the linked Renewal record
       const { data: renewals } = await crm.coql.query(
-        `SELECT id, Renewal_Stage FROM Renewals WHERE Original_Funding = '${funding.id}' LIMIT 1`
+        `SELECT id, Renewal_Stage, Renewal_Approved_Amount FROM Renewals WHERE Original_Funding = '${funding.id}' LIMIT 1`
       );
+
+      const renewalAmount = renewals[0]?.Renewal_Approved_Amount ?? 0;
 
       if (renewals.length > 0) {
         await crm.records.update('Renewals', [{
@@ -57,6 +62,33 @@ export async function run() {
         logger.info({ fundingId: funding.id, renewalId: renewals[0].id, paydown: funding.Paydown }, 'Marked eligible');
       } else {
         logger.warn({ fundingId: funding.id }, 'No Renewal record found for eligible Funding');
+      }
+
+      // Notify merchant of renewal eligibility
+      if (funding.Merchant?.id) {
+        try {
+          const contact = await crm.records.getById('Contacts', funding.Merchant.id, {
+            fields: ['id', 'First_Name', 'Last_Name', 'Email'],
+          });
+          if (contact?.Email) {
+            const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
+            await sendRenewalEligible(contact.Email, merchantName, renewalAmount);
+          } else {
+            logger.warn({ fundingId: funding.id, contactId: funding.Merchant.id }, 'No email on merchant contact - skipping renewal email');
+          }
+        } catch (err) {
+          logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send merchant renewal email');
+        }
+      }
+
+      // Notify assigned rep of renewal opportunity — Owner lookup includes email directly
+      if (funding.Owner?.email) {
+        try {
+          const merchantName = funding.Name || 'Merchant';
+          await sendLeadAssigned(funding.Owner.email, funding.Owner.name, merchantName, renewalAmount);
+        } catch (err) {
+          logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send rep renewal alert');
+        }
       }
 
       results.processed++;

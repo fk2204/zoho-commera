@@ -21,6 +21,12 @@ export async function run() {
 
   for (const deal of deals) {
     try {
+      // Guard: never recalculate payback after a deal is Funded (post-fact protection)
+      if (deal.Stage === 'Funded') {
+        results.skipped++;
+        continue;
+      }
+
       const approved = deal.Approved_Amount;
       const factor = deal.Factor_Rate;
 

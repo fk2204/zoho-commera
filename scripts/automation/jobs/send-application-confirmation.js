@@ -10,14 +10,17 @@ export async function run() {
   const start = Date.now();
   const results = { processed: 0, skipped: 0, errors: 0 };
 
-  // Get recent Submissions/Deals (created in last 7 days, not yet sent confirmation)
-  // Note: We check for deals that don't have email_sent flag or recent creation
-  const { data: deals } = await crm.coql.query(
-    `SELECT id, Deal_Name, Contact_Name, Account_Name, Owner, Amount, Stage
+  // Fetch all active deals including Date_Application_Sent for deduplication.
+  // Zoho COQL does not support IS NULL on date fields, so we filter client-side.
+  const { data: allDeals } = await crm.coql.query(
+    `SELECT id, Deal_Name, Contact_Name, Account_Name, Owner, Amount, Stage, Date_Application_Sent
      FROM Deals
      WHERE Stage is not null
      LIMIT 200`
   );
+
+  // Dedup: skip any deal that already has a Date_Application_Sent value
+  const deals = allDeals.filter(d => !d.Date_Application_Sent);
 
   logger.info({ job: 'sendApplicationConfirmation', queried: deals.length }, 'Job started');
 
@@ -56,12 +59,12 @@ export async function run() {
       // Send confirmation to merchant
       const confirmSent = await sendApplicationConfirmation(contact.Email, merchantName, submissionNumber);
 
-      // Send alert to assigned rep (if available)
+      // Send alert to assigned rep (if available) — COQL Owner objects only have id, not email
       if (deal.Owner?.id) {
         try {
-          const owner = await crm.users.findUserByEmail(deal.Owner.email);
+          const owner = await crm.users.getById(deal.Owner.id);
           if (owner?.email) {
-            await sendNewApplicationAlert(owner.email, merchantName, submissionNumber, owner.first_name);
+            await sendNewApplicationAlert(owner.email, merchantName, submissionNumber, owner.full_name ?? deal.Owner.name);
           }
         } catch (err) {
           logger.debug({ dealId: deal.id, err: err.message }, 'Could not send rep alert');
@@ -69,6 +72,9 @@ export async function run() {
       }
 
       if (confirmSent) {
+        // Stamp Date_Application_Sent so dedup filter excludes this deal on next run
+        const today = new Date().toISOString().split('T')[0];
+        await crm.records.update('Deals', [{ id: deal.id, Date_Application_Sent: today }]);
         results.processed++;
       }
     } catch (err) {

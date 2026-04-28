@@ -98,6 +98,36 @@ export async function sendFundingConfirmation(merchantEmail, merchantName, fundi
 }
 
 /**
+ * Send lead assignment notification to sales rep
+ * @param {string} repEmail - Rep's email
+ * @param {string} repName - Rep's name
+ * @param {string} merchantName - Merchant's name
+ * @param {number} leadAmount - Requested funding amount
+ */
+export async function sendLeadAssigned(repEmail, repName, merchantName, leadAmount) {
+  if (!repEmail) {
+    logger.warn({ repName, merchantName }, 'No email for rep - skipping lead assignment alert');
+    return false;
+  }
+
+  if (config.dryRun) {
+    logger.info({ to: repEmail, repName, merchantName, leadAmount }, '[DRY RUN] Would send lead assigned alert');
+    return true;
+  }
+
+  const template = templates.leadAssigned(repName, merchantName, leadAmount);
+  const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
+
+  if (sent) {
+    logger.info({ to: repEmail, repName, merchantName }, 'Lead assigned alert sent via SMTP');
+  } else {
+    logger.error({ to: repEmail }, 'Failed to send lead assigned alert');
+  }
+
+  return sent;
+}
+
+/**
  * Send renewal eligibility notification
  * @param {string} merchantEmail - Merchant's email
  * @param {string} merchantName - Merchant's name

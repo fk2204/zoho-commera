@@ -64,6 +64,8 @@ function lenderMatchesDeal(lender, deal, contact, account) {
     reasons.push(`State "${state}" is excluded`);
   }
 
+  if (deal.Entity_type === 'Sole Proprietorship' && !lender.Funds_Sole_Props) return false;
+
   return { match: reasons.length === 0, reasons };
 }
 
