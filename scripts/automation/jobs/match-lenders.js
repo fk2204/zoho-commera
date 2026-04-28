@@ -6,6 +6,7 @@
 import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
+import * as cliq from '../../../src/cliq/index.js';
 
 function getTimInBusinessMonths(dateStarted) {
   if (!dateStarted) return 0;
@@ -138,6 +139,16 @@ export async function run({ dealId = null } = {}) {
           ficoBand: getFicoBand(contact?.FICO_score),
           revenue: account?.Monthly_Revenue,
         }, 'No lenders matched — manual review needed');
+
+        // Alert ops to manual deal review
+        try {
+          const ficoBand = getFicoBand(contact?.FICO_score);
+          const revenue = account?.Monthly_Revenue ? `$${(account.Monthly_Revenue).toLocaleString()}` : 'unknown';
+          await cliq.postToChannel('ops-automation', `⚠️ **No Lenders Match** \n${deal.Deal_Name} (FICO: ${ficoBand}, Revenue: ${revenue}) — needs manual review`);
+        } catch (err) {
+          logger.debug({ dealId: deal.id, err: err.message }, 'Could not post no-match alert to Cliq');
+        }
+
         results.skipped++;
         continue;
       }

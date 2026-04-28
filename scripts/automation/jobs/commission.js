@@ -11,7 +11,7 @@ export async function run() {
   const start = Date.now();
   const results = { processed: 0, skipped: 0, errors: 0 };
 
-  const { data: deals } = await crm.coql.query(
+  const deals = await crm.coql.queryAll(
     `SELECT id, Deal_Name, Funded_Amount, Commission, Estimated_commision
      FROM Deals
      WHERE Funded_Amount is not null AND Commission is not null
@@ -46,6 +46,23 @@ export async function run() {
 
       await crm.records.update('Deals', [{ id: deal.id, Estimated_commision: expected }]);
       logger.info({ dealId: deal.id, Deal_Name: deal.Deal_Name, commission: expected }, 'Commission set');
+
+      // Sync commission to linked Funding record(s) — find by Submission = Deal.id
+      try {
+        const { data: fundings } = await crm.coql.query(
+          `SELECT id FROM Fundings WHERE Submission = '${deal.id}' LIMIT 1`
+        );
+        if (fundings.length > 0) {
+          await crm.records.update('Fundings', [{
+            id: fundings[0].id,
+            Commission_Amount: expected,
+          }]);
+          logger.debug({ fundingId: fundings[0].id, commission: expected }, 'Funding commission synced');
+        }
+      } catch (err) {
+        logger.debug({ dealId: deal.id, err: err.message }, 'Could not sync commission to Funding');
+      }
+
       results.processed++;
     } catch (err) {
       logger.error({ dealId: deal.id, err: err.message }, 'Commission failed for record');

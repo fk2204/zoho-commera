@@ -10,7 +10,7 @@ export async function run() {
   const start = Date.now();
   const results = { processed: 0, skipped: 0, errors: 0 };
 
-  const { data: deals } = await crm.coql.query(
+  const deals = await crm.coql.queryAll(
     `SELECT id, Deal_Name, Stage, Approved_Amount, Factor_Rate, Payback_Amount
      FROM Deals
      WHERE Approved_Amount is not null AND Factor_Rate is not null

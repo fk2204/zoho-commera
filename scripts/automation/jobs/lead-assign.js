@@ -7,6 +7,7 @@ import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
 import { getJobLastRun, markJobComplete } from '../state.js';
 import { sendLeadAssigned } from '../../../src/mail/sender.js';
+import * as cliq from '../../../src/cliq/index.js';
 
 export async function run() {
   const start = Date.now();
@@ -68,6 +69,14 @@ export async function run() {
         } catch (err) {
           logger.warn({ leadId: lead.id, repEmail: rep.email, err: err.message }, 'Could not send lead assignment alert');
         }
+      }
+
+      // Post to ops channel
+      try {
+        const amount = lead.Amount ? `$${(lead.Amount).toLocaleString()}` : 'amount TBD';
+        await cliq.postToChannel('ops-automation', `📌 **Lead Assigned** \n${merchantName} (${amount}) → ${rep.full_name}`);
+      } catch (err) {
+        logger.debug({ leadId: lead.id, err: err.message }, 'Could not post lead assignment to Cliq');
       }
 
       results.processed++;

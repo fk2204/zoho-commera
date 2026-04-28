@@ -12,7 +12,7 @@ export async function run() {
 
   // Fetch all active deals including Date_Application_Sent for deduplication.
   // Zoho COQL does not support IS NULL on date fields, so we filter client-side.
-  const { data: allDeals } = await crm.coql.query(
+  const allDeals = await crm.coql.queryAll(
     `SELECT id, Deal_Name, Contact_Name, Account_Name, Owner, Amount, Stage, Date_Application_Sent
      FROM Deals
      WHERE Stage is not null

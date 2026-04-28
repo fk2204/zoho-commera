@@ -7,6 +7,7 @@ import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
 import { sendFundingConfirmation, sendFundingAlert } from '../../../src/mail/sender.js';
+import * as cliq from '../../../src/cliq/index.js';
 import { run as createRenewal } from './create-renewal.js';
 
 export async function run() {
@@ -170,6 +171,15 @@ export async function run() {
       }
 
       results.processed++;
+
+      // Post to ops channel
+      try {
+        const merchantName = `${deal.Contact_Name?.name || 'Merchant'}`;
+        const amount = `$${(deal.Funded_Amount || 0).toLocaleString()}`;
+        await cliq.postToChannel('ops-automation', `✅ **Deal Funded** \n${merchantName} - ${amount} on ${fundingDate}`);
+      } catch (err) {
+        logger.debug({ dealId: deal.id, err: err.message }, 'Could not post funding notification to Cliq');
+      }
 
       // Immediately create Renewal for this new Funding
       await createRenewal({ fundingId, skipQuery: false });
