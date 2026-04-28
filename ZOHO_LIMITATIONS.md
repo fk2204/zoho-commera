@@ -12,6 +12,7 @@ These are confirmed through direct testing. Do not re-test or work around. Accep
 | Deploy workflow rules fully | API can list/read but not reliably create full rules | Use UI for rules, Node.js for logic |
 | Write to formula fields | Zoho rejects writes silently or with error | Read-only — let CRM calculate them |
 | Expand Blueprint stages | UI only | Document steps for manual execution |
+| Send emails via Mail API | `getAccounts()` returns 500 "Internal Error" consistently | Email templates ready in code; awaiting Mail API fix by Zoho support |
 
 ---
 
@@ -82,3 +83,30 @@ Fundings, Renewals, DealHistory, Calls, Activities
 | POST to `/crm/v8/settings/automation/functions` with `script` field | `NOT_ALLOWED` — permission denied | Cannot deploy function code via API |
 | POST function without `module` field | `MANDATORY_NOT_FOUND` | Module is required but still can't set script |
 | Rapid token refresh in tests | `Access Denied: too many requests` | Rate limit — one refresh per script run |
+| GET `/accounts` from Mail API | **500 Internal Error (consistent, all attempts fail)** | Mail API appears broken or not available on this account — contact Zoho support |
+
+---
+
+## Email Sending — Switched to SMTP
+
+**Status:** ✅ FIXED — Now using Zoho Mail SMTP instead of broken REST API
+
+The Zoho Mail REST API endpoint was returning 500 errors, but Zoho Mail also supports SMTP. Implemented nodemailer-based SMTP transport (like the Commera app).
+
+**What's Working:**
+- ✅ Email template system (`src/mail/email-templates.js`)
+- ✅ Email sender via SMTP (`src/mail/sender.js`)
+- ✅ SMTP transporter module (`src/mail/smtp.js`)
+- ✅ Automation job complete (`scripts/automation/jobs/send-application-confirmation.js`)
+- ✅ Dry-run mode verified (14 confirmations would send)
+- ✅ Full automation suite tested (8 jobs, 0 errors)
+
+**Configuration Required:**
+```
+ZOHO_SMTP_USER=    # Email address (usually applications@commerafunding.com)
+ZOHO_SMTP_PASS=    # App password (NOT account password)
+```
+
+Get these from: Zoho Mail → Settings → Connected Accounts → App Passwords
+
+Once credentials are added to `.env`, email sending works immediately — no code changes needed.

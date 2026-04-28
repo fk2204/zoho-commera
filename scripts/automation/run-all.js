@@ -6,6 +6,7 @@
 
 import { logger } from '../../src/utils/logger.js';
 import { markJobComplete } from './state.js';
+import { run as sendApplicationConfirmation } from './jobs/send-application-confirmation.js';
 import { run as leadScore } from './jobs/lead-score.js';
 import { run as tibBand } from './jobs/tib-band.js';
 import { run as payback } from './jobs/payback.js';
@@ -16,6 +17,7 @@ import { run as renewalCheck } from './jobs/renewal-check.js';
 import { run as daysToFund } from './jobs/days-to-fund.js';
 
 const JOBS = [
+  { name: 'sendApplicationConfirmation', fn: sendApplicationConfirmation, stateKey: 'sendApplicationConfirmation' },
   // { name: 'leadScore',     fn: leadScore,     stateKey: 'leadScore' }, // DISABLED: Lead_Scores field is write-protected (Scoring Rules not available in Professional edition)
   { name: 'tibBand',       fn: tibBand,       stateKey: 'tibBand' },
   { name: 'payback',       fn: payback,       stateKey: 'payback' },

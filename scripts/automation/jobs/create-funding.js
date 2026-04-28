@@ -6,6 +6,7 @@
 import * as crm from '../../../src/crm/index.js';
 import { logger } from '../../../src/utils/logger.js';
 import { config } from '../../../src/config.js';
+import { sendFundingConfirmation } from '../../../src/mail/sender.js';
 import { run as createRenewal } from './create-renewal.js';
 
 export async function run() {
@@ -94,6 +95,21 @@ export async function run() {
       }
 
       logger.info({ dealId: deal.id, fundingId, Deal_Name: deal.Deal_Name }, 'Funding created');
+
+      // Send funding confirmation email to merchant
+      if (deal.Contact_Name?.id) {
+        try {
+          const contact = await crm.records.getById('Contacts', deal.Contact_Name.id, {
+            fields: ['id', 'First_Name', 'Last_Name', 'Email'],
+          });
+          if (contact?.Email) {
+            const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
+            await sendFundingConfirmation(contact.Email, merchantName, deal.Funded_Amount, today);
+          }
+        } catch (err) {
+          logger.warn({ dealId: deal.id, err: err.message }, 'Failed to send funding confirmation email');
+        }
+      }
 
       // Update Business (Account) funding history
       const { data: [biz] } = await crm.coql.query(

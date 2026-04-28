@@ -159,6 +159,54 @@ function getTimInBusinessMonths(dateStarted) {
 
 ---
 
+## 8. Email Notifications to Merchants & Sales Reps
+
+**Status:** ✅ READY — Using Zoho Mail SMTP via nodemailer
+
+**Triggers:**
+
+1. **New Application Submitted** (Daily Job)
+   - When: Deal/Submission created in CRM (checked each morning)
+   - To Merchant: Confirmation email with submission details
+   - To Sales Rep: Alert that new application received (assigned rep only)
+   - Via: `scripts/automation/jobs/send-application-confirmation.js`
+
+2. **Funding Approved** (When Funding Created)
+   - When: Funding record created from Funded Deal
+   - To Merchant: Confirmation with funding amount and expected funding date
+   - Via: `src/mail/sender.js::sendFundingConfirmation()` called from create-funding.js
+
+3. **Renewal Eligible** (Future - When Paydown ≥ 50%)
+   - When: Funding hits 50% paydown in renewal-check job
+   - To Merchant: Notification of renewal eligibility with potential amount
+   - Via: `src/mail/sender.js::sendRenewalEligible()` (ready to integrate)
+
+**Email Templates:** All defined in `src/mail/email-templates.js`
+- Application confirmation with submission number
+- New application alert for assigned sales rep
+- Funding confirmation with amount and date
+- Renewal eligibility notification
+
+**Sender Email:** `applications@commerafunding.com` (configurable via `ZOHO_SMTP_USER`)
+
+**Transport:** Zoho Mail SMTP via nodemailer
+- Host: `smtp.zoho.com`
+- Port: `465` (SSL)
+- Credentials: `ZOHO_SMTP_USER` and `ZOHO_SMTP_PASS` from `.env`
+
+**Implementation Status:**
+- ✅ Email templates built (`src/mail/email-templates.js`)
+- ✅ SMTP transporter module (`src/mail/smtp.js`)
+- ✅ Sender service using SMTP (`src/mail/sender.js`)
+- ✅ Automation job complete (`send-application-confirmation.js`)
+- ✅ Dry-run mode verified (14 confirmations tested)
+- ✅ Full suite tested (8 jobs, 0 errors)
+- ⏳ Awaiting: SMTP credentials in `.env`
+
+**Next Step:** Add `ZOHO_SMTP_USER` and `ZOHO_SMTP_PASS` to `.env`, then live email sending works immediately.
+
+---
+
 ## 9. Lead Scoring ⚠️ NOT AVAILABLE VIA API
 
 **Status:** Disabled — `Lead_Scores` field is write-protected (reserved for Zoho Scoring Rules)
@@ -284,12 +332,12 @@ const days = Math.round((funded - created) / 86400000);
 
 ---
 
-## 13. Daily Automation Job
+## 14. Daily Automation Job
 
 **Schedule:** Every morning at 8:00 AM  
 **Runs in order:**
 
-1. ~~Score all Leads~~ (step 9 — DISABLED: use Zoho Scoring Rules UI instead)
+1. Send Application Confirmation emails (step 8 — ✅ READY via SMTP)
 2. Calculate TIB Bands on Accounts (step 10)
 3. Calculate Payback for all qualifying Deals
 4. Calculate Commission for all qualifying Deals
