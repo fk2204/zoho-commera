@@ -13,11 +13,12 @@ export async function run() {
   const results = { processed: 0, skipped: 0, errors: 0 };
 
   // Get all Funded deals with the fields we need to build a Funding record
+  // Note: Created_Time is not available in Deals; using Stage_Modified_Time as proxy
   const { data: deals } = await crm.coql.query(
     `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender,
             Funded_Amount, Factor_Rate, Payback_Amount, Commission, Estimated_commision,
             Term_Months, Payment_Frequency, Payment_Amount, Holdback,
-            Buy_Rate, Sell_Rate, Net_to_Merchant, Origination_Fee
+            Buy_Rate, Sell_Rate, Net_to_Merchant, Origination_Fee, Date_Funded
      FROM Deals
      WHERE Stage = 'Funded'
      LIMIT 200`
@@ -93,6 +94,35 @@ export async function run() {
       }
 
       logger.info({ dealId: deal.id, fundingId, Deal_Name: deal.Deal_Name }, 'Funding created');
+
+      // Update Business (Account) funding history
+      const { data: [biz] } = await crm.coql.query(
+        `SELECT id, Total_Times_Funded, Total_Funded_Amount_Lifetime, First_Funded_Date
+         FROM Accounts WHERE id = '${deal.Account_Name.id}' LIMIT 1`
+      );
+
+      if (biz) {
+        const timesF = (biz.Total_Times_Funded || 0) + 1;
+        const totalAmt = (biz.Total_Funded_Amount_Lifetime || 0) + (deal.Funded_Amount || 0);
+        const bizUpdate = {
+          id: biz.id,
+          Total_Times_Funded: timesF,
+          Total_Funded_Amount_Lifetime: totalAmt,
+          Last_Funded_Date: today,
+        };
+        if (!biz.First_Funded_Date) bizUpdate.First_Funded_Date = today;
+        await crm.records.update('Accounts', [bizUpdate]);
+        logger.debug({ accountId: biz.id, timesF, totalAmt }, 'Business funding history updated');
+      }
+
+      // Update Deal with Date_Funded (Days_Lead_to_Fund calculated separately in catch-up job)
+      const dealUpdate = { id: deal.id };
+      if (!deal.Date_Funded) dealUpdate.Date_Funded = today;
+      if (Object.keys(dealUpdate).length > 1) {
+        await crm.records.update('Deals', [dealUpdate]);
+        logger.debug({ dealId: deal.id }, 'Deal Date_Funded set');
+      }
+
       results.processed++;
 
       // Immediately create Renewal for this new Funding

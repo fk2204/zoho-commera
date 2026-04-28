@@ -6,18 +6,24 @@
 
 import { logger } from '../../src/utils/logger.js';
 import { markJobComplete } from './state.js';
+import { run as leadScore } from './jobs/lead-score.js';
+import { run as tibBand } from './jobs/tib-band.js';
 import { run as payback } from './jobs/payback.js';
 import { run as commission } from './jobs/commission.js';
 import { run as createFunding } from './jobs/create-funding.js';
 import { run as createRenewal } from './jobs/create-renewal.js';
 import { run as renewalCheck } from './jobs/renewal-check.js';
+import { run as daysToFund } from './jobs/days-to-fund.js';
 
 const JOBS = [
+  // { name: 'leadScore',     fn: leadScore,     stateKey: 'leadScore' }, // DISABLED: Lead_Scores field is write-protected (Scoring Rules not available in Professional edition)
+  { name: 'tibBand',       fn: tibBand,       stateKey: 'tibBand' },
   { name: 'payback',       fn: payback,       stateKey: 'payback' },
   { name: 'commission',    fn: commission,    stateKey: 'commission' },
   { name: 'createFunding', fn: createFunding, stateKey: 'createFunding' },
   { name: 'createRenewal', fn: createRenewal, stateKey: 'createRenewal' },
   { name: 'renewalCheck',  fn: renewalCheck,  stateKey: 'renewalCheck' },
+  { name: 'daysToFund',    fn: daysToFund,    stateKey: 'daysToFund' },
 ];
 
 export async function runAll() {

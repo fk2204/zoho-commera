@@ -53,9 +53,18 @@ function getFicoBand(score) {
   if (score >= 680) return 'A';
   if (score >= 640) return 'B';
   if (score >= 600) return 'C';
-  return 'D';
+  if (score >= 550) return 'D';
+  return 'Sub';
 }
 ```
+
+**Bands:**
+- `A+`: 720+
+- `A`: 680-719
+- `B`: 640-679
+- `C`: 600-639
+- `D`: 550-599
+- `Sub`: <550
 
 ---
 
@@ -150,16 +159,144 @@ function getTimInBusinessMonths(dateStarted) {
 
 ---
 
-## 8. Daily Automation Job
+## 9. Lead Scoring ⚠️ NOT AVAILABLE VIA API
+
+**Status:** Disabled — `Lead_Scores` field is write-protected (reserved for Zoho Scoring Rules)
+
+**Alternative:** Configure Scoring Rules in Zoho UI:
+1. Setup → Automation → Scoring Rules
+2. Create new rule on Leads module
+3. Set 11 categories / 43 criteria as defined below
+
+**Manual Score calculation (for reference, implement in Zoho UI Scoring Rules):** 11 categories / 43 criteria
+
+1. **Monthly Revenue** (0-100k)
+   - >= $100k: +40 | >= $50k: +25 | >= $30k: +15 | >= $15k: +5 | >= $10k: 0 | < $10k: -10
+
+2. **FICO Score**
+   - >= 720: +25 | >= 680: +20 | >= 650: +15 | >= 600: +10 | >= 550: +5 | 1-549: -10 | 0: 0
+
+3. **Time in Business (months)**
+   - >= 24: +20 | >= 12: +10 | >= 6: +5 | >= 4: 0 | < 4: -5
+
+4. **Existing MCA Positions**
+   - "0 — Clean": +30 | "1 — One position": +15 | "2 — Two positions": +5 | "3 — Three positions": -10 | "4+ — Stacked": -20
+
+5. **Requested Amount**
+   - >= $100k: +15 | >= $50k: +10 | >= $25k: +5 | else: 0
+
+6. **Industry** (negative scoring)
+   - Contains "RESTRICTED": -50
+
+7. **Lead Source** (conversion probability)
+   - "Referral — Merchant": +20 | "Referral — Partner": +15 | "Website Form": +10 | "Live Transfer": +10 | "Google Ads": +5 | "UCC List": +5
+
+8. **NSFs Last 3 Months** (bank health)
+   - 0: +10 | 1-3: 0 | 4-7: -5 | 8-12: -15 | > 12: -25
+
+9. **Urgency** (buying signal)
+   - "ASAP (24-48 hours)": +15 | "This Week": +10 | "Next 2 Weeks": +5 | "This Month": 0 | "Just Exploring": -5
+
+10. **Negative Days Last 3 Months** (bank health)
+    - 0: +5 | 1-3: 0 | 4-7: -5 | > 7: -15
+
+11. **Entity Type**
+    - LLC|C-Corp|S-Corp: +5 | Sole Proprietorship: -5
+
+**Score Tiers:**
+- 90+: A+ Lead → Call within 2 min
+- 70-89: A Lead → Call within 15 min
+- 50-69: B Lead → Call within 1 hour
+- 30-49: C Lead → Call within 4 hours
+- 10-29: D Lead → Call when free
+- < 10: F Lead → Restricted industry or very weak
+
+**Scope:** All Leads where `Lead_Status != 'Do Not Contact'`
+
+---
+
+## 10. TIB Band Classification
+
+**Trigger:** Daily job  
+**Module:** Accounts  
+**Target field:** `TIB_Band` (check `read_only` flag at startup)
+
+Calculate months from `Date_Business_Started` to today:
+
+```js
+function getTibBand(dateStarted) {
+  const start = new Date(dateStarted);
+  const now = new Date();
+  const months = (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth());
+
+  if (months >= 24) return '2+ Years';
+  if (months >= 12) return '1-2 Years';
+  if (months >= 6) return '6-12 Months';
+  if (months >= 4) return '4-6 Months';
+  return 'Under 4 Months';
+}
+```
+
+**Scope:** All Accounts where `Date_Business_Started is not null`
+
+**Note:** If `TIB_Band` is read-only (formula field), job logs warning and skips. Calculations become formula-driven.
+
+---
+
+## 11. Days Lead to Fund
+
+**Trigger:** Daily job + on demand (catch-up)  
+**Module:** Deals  
+**Target field:** `Days_Lead_to_Fund` (writable Number)
+
+```
+Days_Lead_to_Fund = calendar days from Deal.Created_Time to Deal.Date_Funded
+```
+
+Calculated when Funding is created (in Step 4), and back-filled for any Funded deals missing this field.
+
+```js
+const created = new Date(deal.Created_Time);
+const funded = new Date(deal.Date_Funded);
+const days = Math.round((funded - created) / 86400000);
+```
+
+**Scope:** All Deals where `Stage = 'Funded'` AND `Date_Funded is not null` AND `Days_Lead_to_Fund is null`
+
+---
+
+## 12. Business Funding History Update
+
+**Trigger:** When Funding record is created from a Funded Deal  
+**Module:** Accounts  
+**Fields updated:**
+- `Total_Times_Funded`: incremented by 1
+- `Total_Funded_Amount_Lifetime`: sum of all funded amounts
+- `First_Funded_Date`: set on first funding (not overwritten)
+- `Last_Funded_Date`: updated to today
+
+**Process:**
+1. Create Funding record
+2. Query Account: `SELECT id, Total_Times_Funded, Total_Funded_Amount_Lifetime, First_Funded_Date`
+3. Calculate: `timesF = (current || 0) + 1`, `totalAmt = (current || 0) + Deal.Funded_Amount`
+4. Update Account with new values
+
+---
+
+## 13. Daily Automation Job
 
 **Schedule:** Every morning at 8:00 AM  
 **Runs in order:**
 
-1. Calculate Payback for all qualifying Deals
-2. Calculate Commission for all qualifying Deals
-3. Create Funding for all Funded Deals that are missing one
-4. Create Renewal for all Fundings that are missing one
-5. Run Renewal Eligibility Check
+1. ~~Score all Leads~~ (step 9 — DISABLED: use Zoho Scoring Rules UI instead)
+2. Calculate TIB Bands on Accounts (step 10)
+3. Calculate Payback for all qualifying Deals
+4. Calculate Commission for all qualifying Deals
+5. Create Funding for all Funded Deals that are missing one (includes steps 11-12)
+6. Create Renewal for all Fundings that are missing one
+7. Run Renewal Eligibility Check
+8. Catch-up: fill Days_Lead_to_Fund for any Funded deals missing it (step 11)
 
 **Rules:**
 - Each step runs independently — one step failing does not stop the rest

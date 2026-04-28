@@ -20,11 +20,14 @@ These are confirmed through direct testing. Do not re-test or work around. Accep
 | Module | Field | Type | Notes |
 |--------|-------|------|-------|
 | Leads | `FICO_Band` | formula | Auto-calculated from FICO_score |
+| Leads | `Lead_Scores` | write-protected | Reserved for Zoho Scoring Rules (Professional+ only); only 0/null accepted |
 | Contacts | `FICO_Band` | formula | Auto-calculated from FICO_score |
 | Accounts | `TIB_Band` | formula | Auto-calculated from Date_Business_Started |
 | Accounts | `Time_in_Business_Months` | formula | Auto-calculated from Date_Business_Started |
 
 For FICO band logic in Node.js: compute it in memory from `FICO_score`, use it for decisions — never write it back.
+
+**Lead Scoring:** The `Lead_Scores` field cannot be written via API. If Scoring Rules are needed, configure them in Zoho UI: Setup → Automation → Scoring Rules → Create new rule on Leads module. Manual scoring via API is not possible in Professional Edition.
 
 ---
 

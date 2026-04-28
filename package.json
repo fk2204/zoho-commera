@@ -14,6 +14,10 @@
     "run": "node scripts/automation/run-all.js",
     "run:dry": "cross-env DRY_RUN=true node scripts/automation/run-all.js",
     "scheduler": "node scripts/automation/scheduler.js",
+    "lead-score": "node -e \"import('./scripts/automation/jobs/lead-score.js').then(m => m.run())\"",
+    "tib-band": "node -e \"import('./scripts/automation/jobs/tib-band.js').then(m => m.run())\"",
+    "days-to-fund": "node -e \"import('./scripts/automation/jobs/days-to-fund.js').then(m => m.run())\"",
+    "lead-assign": "node -e \"import('./scripts/automation/jobs/lead-assign.js').then(m => m.run())\"",
     "match-lenders": "node -e \"import('./scripts/automation/jobs/match-lenders.js').then(m => m.run())\""
   },
   "dependencies": {

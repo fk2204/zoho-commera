@@ -20,7 +20,8 @@ function getFicoBand(score) {
   if (score >= 680) return 'A';
   if (score >= 640) return 'B';
   if (score >= 600) return 'C';
-  return 'D';
+  if (score >= 550) return 'D';
+  return 'Sub';
 }
 
 function lenderMatchesDeal(lender, deal, contact, account) {
