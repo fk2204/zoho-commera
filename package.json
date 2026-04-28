@@ -11,7 +11,10 @@
     "setup:oauth": "node scripts/setup-oauth.js",
     "test:connection": "node scripts/test-connection.js",
     "refresh-token": "node scripts/refresh-token.js",
-    "discover": "node scripts/discover.js"
+    "run": "node scripts/automation/run-all.js",
+    "run:dry": "cross-env DRY_RUN=true node scripts/automation/run-all.js",
+    "scheduler": "node scripts/automation/scheduler.js",
+    "match-lenders": "node -e \"import('./scripts/automation/jobs/match-lenders.js').then(m => m.run())\""
   },
   "dependencies": {
     "dotenv": "^16.4.5",

@@ -121,6 +121,64 @@ npm run refresh-token             # debug auth
 node scripts/<your-script>.js
 ```
 
+## Key Documentation
+
+Read these before building anything CRM-related:
+
+| File | Read When |
+|------|-----------|
+| `BUSINESS_LOGIC.md` | Building any automation — defines exact rules and formulas |
+| `DATA_MODEL.md` | Working with multiple modules — defines relationships and field mappings |
+| `ZOHO_LIMITATIONS.md` | Starting any new task — defines what the API cannot do |
+| `ARCHITECTURE.md` | Building automation scripts — defines structure, build protocol, decision framework |
+
+---
+
+## Automation Approach
+
+**All automation is Node.js scripts on this machine calling the Zoho CRM REST API.**
+
+- No Deluge functions
+- No Zoho UI clicks for automation
+- No webhooks, no external servers
+- Polling-based: query records modified since last run
+- State tracked in `.automation-state.json`
+
+---
+
+## Rules — What Claude Code Must and Must Not Do
+
+### Before writing any code:
+1. Read `BUSINESS_LOGIC.md` — if the logic isn't there, ask the user before inventing it
+2. Read `DATA_MODEL.md` — confirm field names and relationships
+3. Check `ZOHO_LIMITATIONS.md` — confirm the API can actually do what you're about to build
+4. Verify field names with `metadata.listFields(module)` — never assume a field name
+
+### Build protocol (no exceptions):
+1. **VERIFY** — check fields, check limitations
+2. **QUERY FIRST** — run read-only query, log results, confirm data looks right
+3. **DRY RUN** — `DRY_RUN=true`, review output
+4. **ONE RECORD** — run on single test record, read it back to confirm write worked
+5. **BATCH** — only after step 4 succeeds
+
+### Hard rules:
+- **Never assume a field is writable** — check `read_only` flag from `metadata.listFields()`
+- **Never create a record without checking if it already exists** — idempotency is mandatory
+- **Never run batch writes without a dry run first**
+- **Never call `getAccessToken()` inside a loop** — one token per script run
+- **Never make architectural decisions alone** — state options, ask user
+- **Never assume CRM data matches local docs** — CRM is always the source of truth
+- **Never build what isn't in `BUSINESS_LOGIC.md`** without asking first
+- **Never suggest Deluge, Zoho UI automation, or webhooks** for this project
+
+### When something unexpected happens:
+- API returns an error not in `ZOHO_LIMITATIONS.md` → stop, report to user, do not guess
+- Field doesn't exist on a module → verify with `metadata.listFields()`, do not assume typo
+- CRM data doesn't match `DATA_MODEL.md` → report discrepancy, ask before proceeding
+- Step produces 0 results when records were expected → log and report, do not silently pass
+
+---
+
 ## Conventions for Claude Code
 
 When working in this repo, Claude Code should:
