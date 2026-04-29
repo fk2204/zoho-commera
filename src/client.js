@@ -63,11 +63,19 @@ export async function zohoRequest(fullUrl, opts = {}) {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       logger.debug({ method, url: url.pathname, attempt }, 'API request');
-      const res = await fetch(url, {
-        method,
-        headers: finalHeaders,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      });
+      const reqController = new AbortController();
+      const reqTimeoutId = setTimeout(() => reqController.abort(), 30_000);
+      let res;
+      try {
+        res = await fetch(url, {
+          method,
+          headers: finalHeaders,
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+          signal: reqController.signal,
+        });
+      } finally {
+        clearTimeout(reqTimeoutId);
+      }
 
       if (res.status === 204) return null;
 

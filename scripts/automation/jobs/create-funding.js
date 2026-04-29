@@ -16,7 +16,7 @@ export async function run() {
 
   // Get all Funded deals with the fields we need to build a Funding record
   // Note: Created_Time is not available in Deals; using Stage_Modified_Time as proxy
-  const { data: deals } = await crm.coql.query(
+  const deals = await crm.coql.queryAll(
     `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender,
             Funded_Amount, Factor_Rate, Payback_Amount, Commission, Estimated_commision,
             Term_Months, Payment_Frequency, Payment_Amount, Holdback,

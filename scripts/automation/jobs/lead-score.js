@@ -93,7 +93,7 @@ export async function run() {
   const start = Date.now();
   const results = { processed: 0, skipped: 0, errors: 0 };
 
-  const { data: leads } = await crm.coql.query(
+  const leads = await crm.coql.queryAll(
     `SELECT id, Last_Name, Lead_Status, Monthly_Revenue_USD, FICO_score,
             Time_in_Business_Months, Existing_MCA_Positions, Requested_Amount,
             Industry, Lead_Source, NSFs_Last_3_Months, Urgency,

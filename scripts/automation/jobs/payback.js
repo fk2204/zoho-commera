@@ -19,6 +19,8 @@ export async function run() {
 
   logger.info({ job: 'payback', queried: deals.length }, 'Job started');
 
+  const updates = [];
+
   for (const deal of deals) {
     try {
       // Guard: never recalculate payback after a deal is Funded (post-fact protection)
@@ -49,13 +51,17 @@ export async function run() {
         continue;
       }
 
-      await crm.records.update('Deals', [{ id: deal.id, Payback_Amount: expected }]);
-      logger.info({ dealId: deal.id, Deal_Name: deal.Deal_Name, payback: expected }, 'Payback set');
+      updates.push({ id: deal.id, Payback_Amount: expected });
+      logger.info({ dealId: deal.id, Deal_Name: deal.Deal_Name, payback: expected }, 'Payback queued');
       results.processed++;
     } catch (err) {
       logger.error({ dealId: deal.id, err: err.message }, 'Payback failed for record');
       results.errors++;
     }
+  }
+
+  for (let i = 0; i < updates.length; i += 100) {
+    if (!config.dryRun) await crm.records.update('Deals', updates.slice(i, i + 100));
   }
 
   logger.info({ ...results, durationMs: Date.now() - start }, 'Payback job complete');

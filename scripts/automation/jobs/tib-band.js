@@ -37,7 +37,7 @@ export async function run() {
     return results;
   }
 
-  const { data: accounts } = await crm.coql.query(
+  const accounts = await crm.coql.queryAll(
     `SELECT id, Account_Name, Date_Business_Started, TIB_Band
      FROM Accounts
      WHERE Date_Business_Started is not null
@@ -45,6 +45,8 @@ export async function run() {
   );
 
   logger.info({ job: 'tibBand', queried: accounts.length }, 'Job started');
+
+  const updates = [];
 
   for (const account of accounts) {
     try {
@@ -62,13 +64,17 @@ export async function run() {
         continue;
       }
 
-      await crm.records.update('Accounts', [{ id: account.id, TIB_Band: expected }]);
-      logger.info({ accountId: account.id, Account_Name: account.Account_Name, tibBand: expected }, 'TIB_Band set');
+      updates.push({ id: account.id, TIB_Band: expected });
+      logger.info({ accountId: account.id, Account_Name: account.Account_Name, tibBand: expected }, 'TIB_Band queued');
       results.processed++;
     } catch (err) {
       logger.error({ accountId: account.id, err: err.message }, 'TIB Band failed for record');
       results.errors++;
     }
+  }
+
+  for (let i = 0; i < updates.length; i += 100) {
+    if (!config.dryRun) await crm.records.update('Accounts', updates.slice(i, i + 100));
   }
 
   logger.info({ ...results, durationMs: Date.now() - start }, 'TIB Band job complete');

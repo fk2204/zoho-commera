@@ -38,20 +38,38 @@ probe('Cliq', null, async () => {
 
 probe('WorkDrive', null, async () => {
   const { listTeams } = await import('../src/workdrive/index.js');
-  const r = await listTeams();
-  return `✓ ${r?.data?.length ?? 0} team(s)`;
-});
-
-probe('Mail — accounts', null, async () => {
-  const { getAccounts } = await import('../src/mail/index.js');
-  const r = await getAccounts();
-  return `✓ ${r?.data?.length ?? 0} account(s)`;
+  try {
+    const r = await listTeams();
+    return `✓ ${r?.data?.length ?? 0} team(s)`;
+  } catch (err) {
+    // Known Zoho-side config issue: URL Rule not configured in WorkDrive settings
+    if (err.message?.includes('URL Rule is not configured')) {
+      return '○ URL Rule not configured (Zoho WorkDrive settings — see ZOHO_LIMITATIONS.md)';
+    }
+    throw err;
+  }
 });
 
 probe('Sign — templates', null, async () => {
   const { listTemplates } = await import('../src/sign/index.js');
   const r = await listTemplates();
   return `✓ ${r?.templates?.length ?? 0} template(s)`;
+});
+
+probe('Mail — SMTP', null, async () => {
+  if (!process.env.ZOHO_SMTP_USER || !process.env.ZOHO_SMTP_PASS) {
+    return null; // handled as skip below
+  }
+  const nodemailer = (await import('nodemailer')).default;
+  const t = nodemailer.createTransport({
+    host: 'smtp.zoho.com',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.ZOHO_SMTP_USER, pass: process.env.ZOHO_SMTP_PASS },
+    tls: { rejectUnauthorized: false },
+  });
+  await t.verify();
+  return `✓ SMTP connected (${process.env.ZOHO_SMTP_USER})`;
 });
 
 // ---- Per-app (require org ID) ----
@@ -92,8 +110,18 @@ for (const { name, requiresOrgId, fn } of tests) {
   }
   try {
     const result = await fn();
-    console.log(`  ${result.startsWith('✓') ? '' : '✓ '}${name.padEnd(28)} ${result}`);
-    passed++;
+    if (result === null) {
+      console.log(`  ○ ${name.padEnd(28)} skipped (no SMTP credentials)`);
+      skipped++;
+      continue;
+    }
+    if (result.startsWith('○')) {
+      console.log(`  ${result}`);
+      skipped++;
+    } else {
+      console.log(`  ${result.startsWith('✓') ? '' : '✓ '}${name.padEnd(28)} ${result}`);
+      passed++;
+    }
   } catch (err) {
     // Common case: scope not granted — show clearly, don't crash.
     const msg = err.response?.code === 'OAUTH_SCOPE_MISMATCH'

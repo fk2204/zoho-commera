@@ -23,7 +23,7 @@ export async function run({ fundingId = null } = {}) {
     if (record) fundings = [record];
   } else {
     // Full scan — all active Fundings
-    const { data } = await crm.coql.query(
+    fundings = await crm.coql.queryAll(
       `SELECT id, Name, Merchant, Business, Lender, Funded_Amount,
               Factor_Rate, Payment_Amount, Payback_Amount, Balance_Remaining,
               Paydown, Funding_Date
@@ -31,7 +31,6 @@ export async function run({ fundingId = null } = {}) {
        WHERE Funding_status = 'Active'
        LIMIT 200`
     );
-    fundings = data;
   }
 
   logger.info({ job: 'createRenewal', queried: fundings.length }, 'Job started');

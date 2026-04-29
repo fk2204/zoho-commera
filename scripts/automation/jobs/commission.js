@@ -20,6 +20,8 @@ export async function run() {
 
   logger.info({ job: 'commission', queried: deals.length }, 'Job started');
 
+  const updates = [];
+
   for (const deal of deals) {
     try {
       const funded = deal.Funded_Amount;
@@ -44,8 +46,8 @@ export async function run() {
         continue;
       }
 
-      await crm.records.update('Deals', [{ id: deal.id, Estimated_commision: expected }]);
-      logger.info({ dealId: deal.id, Deal_Name: deal.Deal_Name, commission: expected }, 'Commission set');
+      updates.push({ id: deal.id, Estimated_commision: expected });
+      logger.info({ dealId: deal.id, Deal_Name: deal.Deal_Name, commission: expected }, 'Commission queued');
 
       // Sync commission to linked Funding record(s) — find by Submission = Deal.id
       try {
@@ -68,6 +70,10 @@ export async function run() {
       logger.error({ dealId: deal.id, err: err.message }, 'Commission failed for record');
       results.errors++;
     }
+  }
+
+  for (let i = 0; i < updates.length; i += 100) {
+    if (!config.dryRun) await crm.records.update('Deals', updates.slice(i, i + 100));
   }
 
   logger.info({ ...results, durationMs: Date.now() - start }, 'Commission job complete');

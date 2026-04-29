@@ -24,7 +24,8 @@ function getTransporter() {
       port: 465,
       secure: true, // SSL
       auth: { user, pass },
-      tls: { rejectUnauthorized: false }, // Allow self-signed certs
+      // Zoho SMTP presents an intermediate CA not in Node's default bundle on Windows
+      tls: { rejectUnauthorized: false },
     });
     logger.info({ user }, 'SMTP transporter created');
     return transporter;

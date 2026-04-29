@@ -93,11 +93,12 @@ export async function run({ dealId = null } = {}) {
     });
     if (deal) deals = [deal];
   } else {
-    const { data } = await crm.coql.query(
+    // Entity_type not confirmed in Deals module — fetch via getById per-deal if needed
+    const allDeals = await crm.coql.queryAll(
       `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender, Approved_Amount FROM Deals WHERE Lender is null LIMIT 200`
     );
     // Filter out Funded and Dead deals client-side
-    deals = data.filter(d => d.Stage !== 'Funded' && d.Stage !== 'Dead');
+    deals = allDeals.filter(d => d.Stage !== 'Funded' && d.Stage !== 'Dead');
   }
 
   logger.info({ job: 'matchLenders', queried: deals.length }, 'Job started');

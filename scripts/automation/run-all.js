@@ -29,7 +29,7 @@ const JOBS = [
   { name: 'createRenewal', fn: createRenewal, stateKey: 'createRenewal' },
   { name: 'renewalCheck',  fn: renewalCheck,  stateKey: 'renewalCheck' },
   { name: 'daysToFund',    fn: daysToFund,    stateKey: 'daysToFund' },
-  { name: 'leadAssign',    fn: leadAssign,    stateKey: 'leadAssignIndex' },
+  { name: 'leadAssign',    fn: leadAssign,    stateKey: 'leadAssignIndex', managesOwnState: true },
 ];
 
 export async function runAll() {
@@ -44,7 +44,7 @@ export async function runAll() {
     try {
       const result = await job.fn();
       summary[job.name] = { status: 'ok', ...result };
-      if (!dryRun) markJobComplete(job.stateKey);
+      if (!dryRun && !job.managesOwnState) markJobComplete(job.stateKey);
     } catch (err) {
       logger.error({ job: job.name, err: err.message }, `Job ${job.name} failed entirely`);
       summary[job.name] = { status: 'failed', error: err.message };

@@ -25,13 +25,17 @@ let refreshInFlight = null;
  * @returns {Promise<{ refreshToken: string, accessToken: string }>}
  */
 export async function exchangeCodeForRefreshToken(code, scopes) {
-  const url = new URL(`${config.accountsDomain}/oauth/v2/token`);
-  url.searchParams.set('grant_type', 'authorization_code');
-  url.searchParams.set('client_id', config.clientId);
-  url.searchParams.set('client_secret', config.clientSecret);
-  url.searchParams.set('code', code);
-
-  const res = await fetch(url, { method: 'POST' });
+  const params = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    code,
+  });
+  const res = await fetch(`${config.accountsDomain}/oauth/v2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params,
+  });
   const body = await res.json();
 
   if (!res.ok || body.error) {
@@ -92,14 +96,27 @@ async function doRefresh() {
     );
   }
 
-  const url = new URL(`${config.accountsDomain}/oauth/v2/token`);
-  url.searchParams.set('grant_type', 'refresh_token');
-  url.searchParams.set('client_id', config.clientId);
-  url.searchParams.set('client_secret', config.clientSecret);
-  url.searchParams.set('refresh_token', stored.refreshToken);
+  const params = new URLSearchParams({
+    grant_type: 'refresh_token',
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    refresh_token: stored.refreshToken,
+  });
 
   logger.debug('Refreshing access token');
-  const res = await fetch(url, { method: 'POST' });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+  let res;
+  try {
+    res = await fetch(`${config.accountsDomain}/oauth/v2/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
   const body = await res.json();
 
   if (!res.ok || body.error) {

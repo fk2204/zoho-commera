@@ -28,10 +28,10 @@ export async function run() {
   logger.info({ reps: reps.length, repNames: reps.map(r => r.full_name) }, 'Sales reps loaded');
 
   // Get unassigned Leads (Owner not set or empty)
-  const { data: unassignedLeads } = await crm.coql.query(
+  const unassignedLeads = await crm.coql.queryAll(
     `SELECT id, Last_Name, First_Name, Amount, Owner
      FROM Leads
-     WHERE Owner = '' OR Owner is null
+     WHERE Owner is null
      LIMIT 200`
   );
 

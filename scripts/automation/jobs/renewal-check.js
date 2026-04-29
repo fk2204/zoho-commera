@@ -14,13 +14,16 @@ export async function run() {
   const today = new Date().toISOString().split('T')[0];
 
   // Find active Fundings at 50%+ paydown that aren't marked eligible yet
-  const { data: fundings } = await crm.coql.query(
-    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner
+  // COQL does not support LIKE — filter Funding_status client-side after fetching
+  const allFundings = await crm.coql.queryAll(
+    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status
      FROM Fundings
-     WHERE Funding_status = 'Active'
-     AND Paydown >= 50
+     WHERE Paydown >= 50
+     AND Renewal_Eligible = false
      LIMIT 200`
   );
+  // Keep only active fundings (any variant of 'Active — ...')
+  const fundings = allFundings.filter(f => f.Funding_status?.startsWith('Active'));
 
   logger.info({ job: 'renewalCheck', queried: fundings.length }, 'Job started');
 
