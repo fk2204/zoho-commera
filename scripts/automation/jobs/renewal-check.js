@@ -15,14 +15,17 @@ export async function run() {
 
   // Find active Fundings at 50%+ paydown that aren't marked eligible yet
   // Use IN with all known active picklist variants — COQL does not support LIKE
-  // Funded_Amount is the correct field on Fundings; Original_Funded_Amount belongs to Renewals
-  const fundings = await crm.coql.queryAll(
-    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status, Funded_Amount, Date_Funded
+  // COQL does not support boolean literals (= false) or unicode in IN clauses reliably.
+  // Query all Fundings at 50%+ paydown and filter active status + eligibility client-side.
+  const allFundings = await crm.coql.queryAll(
+    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status, Funded_Amount, Funding_Date
      FROM Fundings
-     WHERE Funding_status IN ('Active — Performing', 'Active — Slow Pay', 'Active — On Hold')
-     AND Paydown >= 50
-     AND Renewal_Eligible = false
+     WHERE Paydown >= 50
      LIMIT 200`
+  );
+  const ACTIVE_STATUSES = ['Active — Performing', 'Active — Slow Pay', 'Active — On Hold'];
+  const fundings = allFundings.filter(f =>
+    ACTIVE_STATUSES.includes(f.Funding_status) && f.Renewal_Eligible !== true
   );
 
   logger.info({ job: 'renewalCheck', queried: fundings.length }, 'Job started');
@@ -101,7 +104,7 @@ export async function run() {
       if (funding.Owner?.email) {
         try {
           const merchantName = funding.Name || 'Merchant';
-          await sendRenewalOpportunity(funding.Owner.email, funding.Owner.full_name || funding.Owner.name, merchantName, renewalAmount, contact?.Phone || null, funding.Date_Funded || null, funding.Paydown || 50);
+          await sendRenewalOpportunity(funding.Owner.email, funding.Owner.full_name || funding.Owner.name, merchantName, renewalAmount, contact?.Phone || null, funding.Funding_Date || null, funding.Paydown || 50);
         } catch (err) {
           logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send rep renewal alert');
         }

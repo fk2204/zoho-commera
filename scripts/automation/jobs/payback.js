@@ -13,7 +13,7 @@ export async function run() {
   const deals = await crm.coql.queryAll(
     `SELECT id, Deal_Name, Stage, Approved_Amount, Factor_Rate, Payback_Amount
      FROM Deals
-     WHERE Approved_Amount is not null AND Factor_Rate is not null AND Stage != 'Funded'
+     WHERE Approved_Amount is not null AND Factor_Rate is not null
      LIMIT 200`
   );
 

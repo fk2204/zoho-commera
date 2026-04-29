@@ -13,7 +13,7 @@ export async function run() {
   // Fetch all active deals including Date_Application_Sent for deduplication.
   // Zoho COQL does not support IS NULL on date fields, so we filter client-side.
   const allDeals = await crm.coql.queryAll(
-    `SELECT id, Deal_Name, Contact_Name, Account_Name, Owner, Amount, Stage, Date_Application_Sent, Submission_Number, Industry
+    `SELECT id, Deal_Name, Contact_Name, Account_Name, Owner, Amount, Stage, Date_Application_Sent
      FROM Deals
      WHERE Stage is not null
      LIMIT 200`
@@ -64,7 +64,7 @@ export async function run() {
         try {
           const owner = await crm.users.getUserById(deal.Owner.id);
           if (owner?.email) {
-            await sendNewApplicationAlert(owner.email, merchantName, submissionNumber, owner.full_name ?? deal.Owner.name, contact.Phone || contact.Mobile || null, contact.Email || null, null, deal.Industry || null);
+            await sendNewApplicationAlert(owner.email, merchantName, submissionNumber, owner.full_name ?? deal.Owner.name, contact.Phone || contact.Mobile || null, contact.Email || null, null, null);
           }
         } catch (err) {
           logger.debug({ dealId: deal.id, err: err.message }, 'Could not send rep alert');
