@@ -21,6 +21,16 @@ export async function findUserByEmail(email) {
   return users.find((u) => u.email?.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
+/** Get a user by their CRM record ID. Returns null if not found. */
+export async function getUserById(id) {
+  try {
+    const result = await crmClient.request(`/users/${id}`);
+    return result?.users?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Get the currently authenticated user (the one whose token we hold). */
 export async function getCurrentUser() {
   const result = await crmClient.request('/users', { query: { type: 'CurrentUser' } });

@@ -12,12 +12,16 @@ const STATE_FILE = path.join(__dirname, '../../.automation-state.json');
 const DEFAULT_STATE = {
   lastRun: null,
   jobs: {
+    sendApplicationConfirmation: null,
+    tibBand: null,
     payback: null,
     commission: null,
+    matchLenders: null,
     createFunding: null,
     createRenewal: null,
     renewalCheck: null,
-    matchLenders: null,
+    daysToFund: null,
+    leadAssignIndex: '0',
   },
 };
 

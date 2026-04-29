@@ -59,7 +59,7 @@ export async function exchangeCodeForRefreshToken(code, scopes) {
 
   cachedAccessToken = {
     token: body.access_token,
-    expiresAt: Date.now() + (body.expires_in - 60) * 1000,
+    expiresAt: Date.now() + ((body.expires_in ?? 3600) - 60) * 1000,
   };
 
   return {
@@ -129,7 +129,7 @@ async function doRefresh() {
 
   cachedAccessToken = {
     token: body.access_token,
-    expiresAt: Date.now() + (body.expires_in - 60) * 1000,
+    expiresAt: Date.now() + ((body.expires_in ?? 3600) - 60) * 1000,
   };
   logger.debug({ expiresIn: body.expires_in }, 'Access token refreshed');
   return cachedAccessToken.token;

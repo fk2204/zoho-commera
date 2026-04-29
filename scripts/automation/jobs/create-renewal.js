@@ -67,7 +67,7 @@ export async function run({ fundingId = null } = {}) {
         Original_Funded_Amount: funding.Funded_Amount ?? null,
         Original_Factor_Rate: funding.Factor_Rate ?? null,
         Original_Payment_Amount: funding.Payment_Amount ?? null,
-        Original_Lender: funding.Lender?.name ?? null,
+        Original_Lender: funding.Lender?.id ?? null,
         Original_Funding_Date: funding.Funding_Date ?? null,
         Payoff_of_Original_Deal: funding.Payback_Amount ?? null,
         Current_Paydown: funding.Paydown ?? 0,

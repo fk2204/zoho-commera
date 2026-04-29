@@ -7,7 +7,7 @@
 import { logger } from '../../src/utils/logger.js';
 import { markJobComplete } from './state.js';
 import { run as sendApplicationConfirmation } from './jobs/send-application-confirmation.js';
-import { run as leadScore } from './jobs/lead-score.js';
+// import { run as leadScore } from './jobs/lead-score.js'; // DISABLED: Lead_Scores field is write-protected
 import { run as tibBand } from './jobs/tib-band.js';
 import { run as payback } from './jobs/payback.js';
 import { run as commission } from './jobs/commission.js';

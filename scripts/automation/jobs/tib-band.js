@@ -73,8 +73,13 @@ export async function run() {
     }
   }
 
-  for (let i = 0; i < updates.length; i += 100) {
-    if (!config.dryRun) await crm.records.update('Accounts', updates.slice(i, i + 100));
+  try {
+    for (let i = 0; i < updates.length; i += 100) {
+      if (!config.dryRun) await crm.records.update('Accounts', updates.slice(i, i + 100));
+    }
+  } catch (err) {
+    logger.error({ err: err.message, count: updates.length }, 'Batch TIB Band write failed');
+    results.errors += updates.length;
   }
 
   logger.info({ ...results, durationMs: Date.now() - start }, 'TIB Band job complete');

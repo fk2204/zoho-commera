@@ -89,13 +89,13 @@ export async function run({ dealId = null } = {}) {
   let deals = [];
   if (dealId) {
     const deal = await crm.records.getById('Deals', dealId, {
-      fields: ['id', 'Deal_Name', 'Stage', 'Contact_Name', 'Account_Name', 'Lender', 'Approved_Amount'],
+      fields: ['id', 'Deal_Name', 'Stage', 'Contact_Name', 'Account_Name', 'Lender', 'Approved_Amount', 'Entity_type'],
     });
     if (deal) deals = [deal];
   } else {
     // Entity_type not confirmed in Deals module — fetch via getById per-deal if needed
     const allDeals = await crm.coql.queryAll(
-      `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender, Approved_Amount FROM Deals WHERE Lender is null LIMIT 200`
+      `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender, Approved_Amount, Entity_type FROM Deals WHERE Lender is null LIMIT 200`
     );
     // Filter out Funded and Dead deals client-side
     deals = allDeals.filter(d => d.Stage !== 'Funded' && d.Stage !== 'Dead');

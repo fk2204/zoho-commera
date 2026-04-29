@@ -62,7 +62,7 @@ export async function run() {
       // Send alert to assigned rep (if available) — COQL Owner objects only have id, not email
       if (deal.Owner?.id) {
         try {
-          const owner = await crm.users.getById(deal.Owner.id);
+          const owner = await crm.users.getUserById(deal.Owner.id);
           if (owner?.email) {
             await sendNewApplicationAlert(owner.email, merchantName, submissionNumber, owner.full_name ?? deal.Owner.name, contact.Phone || contact.Mobile || null, contact.Email || null, null, deal.Industry || null);
           }

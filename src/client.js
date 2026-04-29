@@ -191,7 +191,7 @@ function parseRetryAfter(header) {
 
 function isRateLimitBody(body) {
   if (!body || typeof body !== 'object') return false;
-  if (body.code === 'RATE_LIMIT_EXCEEDED' || body.code === '4820') return true;
+  if (body.code === 'RATE_LIMIT_EXCEEDED' || body.code === 4820 || body.code === '4820') return true;
   return false;
 }
 

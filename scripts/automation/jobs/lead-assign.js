@@ -14,7 +14,7 @@ export async function run() {
   const results = { processed: 0, skipped: 0, errors: 0 };
 
   // Load all active users to find sales reps
-  const users = await crm.users.listUsers('ActiveUsers');
+  const users = await crm.users.listUsers({ type: 'ActiveUsers' });
   const reps = users.filter(u => {
     const role = u.role?.name || '';
     return role.includes('Sales Rep') || role.includes('Sales Manager');

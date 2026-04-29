@@ -16,7 +16,7 @@ export async function run() {
 
   // Note: COQL doesn't support "is null" checks, only "is not null"
   // We query all Funded deals and filter in-memory
-  const { data: allFundedDeals } = await crm.coql.query(
+  const { data: allFundedDeals = [] } = await crm.coql.query(
     `SELECT id, Deal_Name, Date_Funded, Days_Lead_to_Fund
      FROM Deals
      WHERE Stage = 'Funded' AND Date_Funded is not null

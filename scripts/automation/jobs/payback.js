@@ -13,7 +13,7 @@ export async function run() {
   const deals = await crm.coql.queryAll(
     `SELECT id, Deal_Name, Stage, Approved_Amount, Factor_Rate, Payback_Amount
      FROM Deals
-     WHERE Approved_Amount is not null AND Factor_Rate is not null
+     WHERE Approved_Amount is not null AND Factor_Rate is not null AND Stage != 'Funded'
      LIMIT 200`
   );
 
@@ -60,8 +60,13 @@ export async function run() {
     }
   }
 
-  for (let i = 0; i < updates.length; i += 100) {
-    if (!config.dryRun) await crm.records.update('Deals', updates.slice(i, i + 100));
+  try {
+    for (let i = 0; i < updates.length; i += 100) {
+      if (!config.dryRun) await crm.records.update('Deals', updates.slice(i, i + 100));
+    }
+  } catch (err) {
+    logger.error({ err: err.message, count: updates.length }, 'Batch Payback write failed');
+    results.errors += updates.length;
   }
 
   logger.info({ ...results, durationMs: Date.now() - start }, 'Payback job complete');

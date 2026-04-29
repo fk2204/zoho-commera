@@ -17,7 +17,7 @@ export async function run() {
   // Get all Funded deals with the fields we need to build a Funding record
   // Note: Created_Time is not available in Deals; using Stage_Modified_Time as proxy
   const deals = await crm.coql.queryAll(
-    `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender,
+    `SELECT id, Deal_Name, Stage, Contact_Name, Account_Name, Lender, Owner,
             Funded_Amount, Factor_Rate, Payback_Amount, Commission, Estimated_commision,
             Term_Months, Payment_Frequency, Payment_Amount, Holdback,
             Buy_Rate, Sell_Rate, Net_to_Merchant, Origination_Fee, Date_Funded
@@ -162,7 +162,7 @@ export async function run() {
       // Send alert to the assigned rep/manager
       if (deal.Owner?.id) {
         try {
-          const owner = await crm.users.getById(deal.Owner.id);
+          const owner = await crm.users.getUserById(deal.Owner.id);
           if (owner?.email) {
             const merchantName = `${deal.Contact_Name?.name || 'Merchant'}`;
             await sendFundingAlert(owner.email, owner.full_name, merchantName, deal.Funded_Amount, fundingDate, deal.Estimated_commision || null, deal.Lender?.name || null);
@@ -184,7 +184,7 @@ export async function run() {
       }
 
       // Immediately create Renewal for this new Funding
-      await createRenewal({ fundingId, skipQuery: false });
+      await createRenewal({ fundingId });
 
     } catch (err) {
       logger.error({ dealId: deal.id, err: err.message }, 'Create Funding failed for record');

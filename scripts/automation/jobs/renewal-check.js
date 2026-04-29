@@ -15,8 +15,9 @@ export async function run() {
 
   // Find active Fundings at 50%+ paydown that aren't marked eligible yet
   // Use IN with all known active picklist variants — COQL does not support LIKE
+  // Funded_Amount is the correct field on Fundings; Original_Funded_Amount belongs to Renewals
   const fundings = await crm.coql.queryAll(
-    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status, Original_Funded_Amount, Date_Funded
+    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status, Funded_Amount, Date_Funded
      FROM Fundings
      WHERE Funding_status IN ('Active — Performing', 'Active — Slow Pay', 'Active — On Hold')
      AND Paydown >= 50
@@ -49,21 +50,19 @@ export async function run() {
       }]);
 
       // Find and update the linked Renewal record
-      const { data: renewals } = await crm.coql.query(
+      const { data: renewals = [] } = await crm.coql.query(
         `SELECT id, Renewal_Stage, Original_Funded_Amount, Original_Factor_Rate FROM Renewals WHERE Original_Funding = '${funding.id}' LIMIT 1`
       );
 
-      // Calculate renewal amount: original funded amount * factor rate (same as original deal)
+      // Calculate renewal amount inside the guard to avoid accessing renewals[0] when empty
       let renewalAmount = 0;
-      if (renewals[0]) {
+      if (renewals.length > 0) {
         const origAmount = renewals[0].Original_Funded_Amount ?? 0;
         const origFactor = renewals[0].Original_Factor_Rate ?? 0;
         if (origAmount > 0 && origFactor > 0) {
           renewalAmount = Math.round(origAmount * origFactor * 100) / 100;
         }
-      }
 
-      if (renewals.length > 0) {
         await crm.records.update('Renewals', [{
           id: renewals[0].id,
           Renewal_Stage: 'Eligible',
@@ -90,7 +89,7 @@ export async function run() {
       if (contact?.Email) {
         try {
           const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
-          await sendRenewalEligible(contact.Email, merchantName, renewalAmount, funding.Original_Funded_Amount || null, funding.Paydown || 50);
+          await sendRenewalEligible(contact.Email, merchantName, renewalAmount, funding.Funded_Amount || null, funding.Paydown || 50);
         } catch (err) {
           logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send merchant renewal email');
         }
