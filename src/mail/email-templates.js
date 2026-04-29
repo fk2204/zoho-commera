@@ -133,34 +133,35 @@ function detailTable(rows) {
 
 export const templates = {
   // ─── Template 1: Merchant Application Confirmation ─────────────────────────
-  applicationConfirmation: (merchantName, submissionNumber) => ({
-    subject: `Your Application - Ref: ${submissionNumber}`,
+  applicationConfirmation: (merchantName, submissionNumber, requestedAmount) => ({
+    subject: `${merchantName}, your${requestedAmount ? ` $${requestedAmount.toLocaleString()}` : ""} application is under review`,
     content: wrapLayout(`
       <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Application Received
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Merchant Funding Application
+        Merchant Cash Advance Application
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Hi ${merchantName},
       </p>
       <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        We've received your application for merchant funding. Our team will review your submission and be in touch with next steps.
+        We've received your merchant cash advance application and our funding team is reviewing it now.
       </p>
 
       ${detailTable(`
         ${detailRow("Reference Number", submissionNumber)}
+        ${requestedAmount ? detailRow("Requested Amount", `$${requestedAmount.toLocaleString()}`) : ""}
         ${detailRow("Status", "Under Review")}
-        ${detailRow("Expected Response", "Within 24–48 business hours")}
+        ${detailRow("Response Time", "2&ndash;4 business hours")}
       `)}
 
       <p style="margin:0;font-size:14px;color:${COLORS.muted};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        <strong style="color:${COLORS.text};">What happens next:</strong> A member of our funding team will contact you directly to discuss your options and collect any additional documentation needed to move your application forward.
+        <strong style="color:${COLORS.text};">What happens next:</strong> A dedicated funding advisor will call you directly to discuss your options and collect any additional documentation needed to move your application forward.
       </p>
 
-      ${ctaButton("Track Your Application", CONTACT.website)}
+      ${ctaButton("Call Us Now", "tel:+18884515255")}
 
       <p style="margin:24px 0 0 0;font-size:13px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Questions? Reply to this email or call us at
@@ -175,28 +176,32 @@ export const templates = {
   }),
 
   // ─── Template 2: Internal New Application Alert (Sales Rep) ────────────────
-  newApplicationAlert: (merchantName, submissionNumber, repName) => ({
-    subject: `New Application: ${merchantName} - ${submissionNumber}`,
+  newApplicationAlert: (merchantName, submissionNumber, repName, merchantPhone, merchantEmail, monthlyRevenue, industry) => ({
+    subject: `New Application: ${merchantName} — Call within 2 hours`,
     content: wrapLayout(`
       <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         New Application Alert
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Internal — Assigned to ${repName}
+        Internal &mdash; Assigned to ${repName}
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Hi ${repName},
       </p>
       <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        A new merchant funding application has been submitted and assigned to you. Please review it in Zoho CRM and follow up with the merchant within 24 hours.
+        A new merchant funding application has been submitted and assigned to you. <strong>Call the merchant within 2 hours</strong> &mdash; speed is the #1 factor in MCA conversion.
       </p>
 
       ${detailTable(`
         ${detailRow("Merchant", merchantName)}
         ${detailRow("Submission Number", submissionNumber)}
+        ${detailRow("Phone", merchantPhone ? `<a href="tel:${merchantPhone}" style="color:${COLORS.primary};text-decoration:none;font-weight:600;">${merchantPhone}</a>` : "&mdash;")}
+        ${detailRow("Email", merchantEmail || "&mdash;")}
+        ${detailRow("Monthly Revenue", monthlyRevenue ? `$${Number(monthlyRevenue).toLocaleString()}` : "&mdash;")}
+        ${detailRow("Industry", industry || "&mdash;")}
         ${detailRow("Assigned Rep", repName)}
-        ${detailRow("Received", new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}
+        ${detailRow("Received", new Date().toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }))}
       `)}
 
       <p style="margin:0;font-size:14px;color:${COLORS.muted};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -218,15 +223,15 @@ export const templates = {
   }),
 
   // ─── Template 3: Merchant Funding Confirmation ─────────────────────────────
-  fundingConfirmation: (merchantName, fundingAmount, fundingDate) => ({
-    subject: `Funding Approved - $${(fundingAmount ?? 0).toLocaleString()}`,
+  fundingConfirmation: (merchantName, fundingAmount, fundingDate, factorRate, totalRepayment, dailyPayment) => ({
+    subject: `Your $${(fundingAmount ?? 0).toLocaleString()} funding is confirmed, ${merchantName}`,
     content: wrapLayout(`
-      <!-- Green accent banner -->
+      <!-- Confirmation banner -->
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
         <tr>
           <td style="background-color:${COLORS.secondary};border-radius:8px;padding:16px 20px;">
             <p style="margin:0;font-size:15px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-              Congratulations! Your funding has been approved.
+              Your funding has been approved and is being processed.
             </p>
           </td>
         </tr>
@@ -236,33 +241,47 @@ export const templates = {
         Funding Confirmed
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Merchant Cash Advance — Approved
+        Merchant Cash Advance &mdash; Approved
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Hi ${merchantName},
       </p>
       <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Great news — your funding application has been approved and is being processed. Here are the details of your approved funding:
+        Your merchant cash advance has been approved. Here are your funding details:
       </p>
 
       ${detailTable(`
-        ${detailRow("Approved Amount", `$${(fundingAmount ?? 0).toLocaleString()}`)}
+        ${detailRow("Funded Amount", `$${(fundingAmount ?? 0).toLocaleString()}`)}
         ${detailRow("Funding Date", fundingDate)}
-        ${detailRow("Status", "Approved & Processing")}
+        ${detailRow("Status", "Approved &amp; Processing")}
       `)}
+
+      <p style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Your Advance Summary
+      </p>
+      ${detailTable(`
+        ${detailRow("Principal", `$${(fundingAmount ?? 0).toLocaleString()}`)}
+        ${detailRow("Factor Rate", factorRate ? factorRate.toString() : "&mdash;")}
+        ${detailRow("Total Repayment", totalRepayment ? `$${Number(totalRepayment).toLocaleString()}` : "&mdash;")}
+        ${detailRow("Est. Daily Payment", dailyPayment ? `$${Number(dailyPayment).toLocaleString()} <span style="font-size:12px;font-weight:400;color:${COLORS.muted};">(based on 22 business days/month)</span>` : "&mdash;")}
+      `)}
+
+      <p style="margin:0 0 16px 0;font-size:12px;color:${COLORS.muted};line-height:1.5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        This is a merchant cash advance, not a loan. Repayment is based on a fixed percentage of future receivables.
+      </p>
 
       <p style="margin:0 0 12px 0;font-size:14px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <strong>Next steps:</strong>
       </p>
       <ul style="margin:0 0 20px 0;padding-left:20px;font-size:14px;color:${COLORS.text};line-height:1.8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <li>Final documents will be sent to you for e-signature shortly.</li>
-        <li>Funds will be deposited on or before your funding date.</li>
+        <li>Funds will be deposited on or before ${fundingDate}.</li>
         <li>Your payment schedule will be included with your documents.</li>
         <li>Contact us immediately if you have any questions before signing.</li>
       </ul>
 
-      ${ctaButton("Contact Us", `mailto:${CONTACT.email}`)}
+      ${ctaButton("Review My Agreement", `mailto:${CONTACT.email}`)}
 
       <p style="margin:24px 0 0 0;font-size:13px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Have questions? Call us directly at
@@ -279,35 +298,41 @@ export const templates = {
   }),
 
   // ─── Template 4: Internal Lead Assignment Alert (Sales Rep) ───────────────
-  leadAssigned: (repName, merchantName, leadAmount) => ({
-    subject: `Lead Assigned: ${merchantName}`,
+  leadAssigned: (repName, merchantName, leadAmount, merchantPhone, merchantEmail, monthlyRevenue, industry, timeInBusiness, businessState) => ({
+    subject: `Lead Assigned: ${merchantName} — Call Now`,
     content: wrapLayout(`
       <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         New Lead Assigned
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Internal — Action Required
+        Internal &mdash; Action Required
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Hi ${repName || 'Team'},
+        Hi ${repName || "Team"},
       </p>
       <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        A lead has been assigned to you. Contact the merchant promptly — speed closes deals.
+        A lead has been assigned to you. <strong>Call immediately</strong> &mdash; the first rep to call wins the deal.
       </p>
 
       ${detailTable(`
         ${detailRow("Merchant", merchantName)}
+        ${detailRow("Phone", merchantPhone ? `<a href="tel:${merchantPhone}" style="color:${COLORS.primary};text-decoration:none;font-weight:600;">${merchantPhone}</a>` : "&mdash;")}
+        ${detailRow("Email", merchantEmail || "&mdash;")}
+        ${detailRow("Monthly Revenue", monthlyRevenue ? `$${Number(monthlyRevenue).toLocaleString()}` : "&mdash;")}
+        ${detailRow("Industry", industry || "&mdash;")}
+        ${detailRow("Time in Business", timeInBusiness ? `${timeInBusiness} months` : "&mdash;")}
+        ${detailRow("State", businessState || "&mdash;")}
         ${detailRow("Requested Amount", `$${(leadAmount ?? 0).toLocaleString()}`)}
-        ${detailRow("Assigned To", repName || 'You')}
-        ${detailRow("Assigned On", new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}
+        ${detailRow("Assigned To", repName || "You")}
+        ${detailRow("Assigned On", new Date().toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }))}
       `)}
 
       <p style="margin:0;font-size:14px;color:${COLORS.muted};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <strong style="color:${COLORS.text};">Action required:</strong> Call the merchant now to introduce yourself and move the application forward.
       </p>
 
-      ${ctaButton("Call Merchant", "https://crm.zoho.com/crm/org/tab/Leads/listview")}
+      ${ctaButton("Call Merchant Now", `tel:${merchantPhone || "#"}`)}
 
       <p style="margin:24px 0 0 0;font-size:13px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Need support? Contact the team at
@@ -322,25 +347,33 @@ export const templates = {
   }),
 
   // ─── Template 5: Merchant Renewal Eligibility ──────────────────────────────
-  renewalEligible: (merchantName, renewalAmount) => ({
-    subject: `You're Eligible for Renewal`,
+  renewalEligible: (merchantName, renewalAmount, originalAmount, paydownPercent) => ({
+    subject: `${merchantName}, you qualify for up to $${(renewalAmount ?? 0).toLocaleString()} in new funding`,
     content: wrapLayout(`
       <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         You're Eligible for Additional Funding
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Renewal Offer — Commera Funding
+        Renewal Offer &mdash; Commera Funding
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Hi ${merchantName},
       </p>
       <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Great news! Based on your strong payment history with Commera, you're now eligible for additional funding. We'd love to help fuel your next stage of growth.
+        Based on your payment history with Commera, you've unlocked access to additional funding. Here's where you stand:
       </p>
 
+      ${paydownPercent != null && originalAmount ? `
+      <p style="margin:0 0 16px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        You've paid back <strong>${paydownPercent}%</strong> of your $${Number(originalAmount).toLocaleString()} advance.
+      </p>
+      ` : ""}
+
       ${detailTable(`
-        ${detailRow("Potential Renewal Amount", `Up to $${(renewalAmount ?? 0).toLocaleString()}`)}
+        ${originalAmount ? detailRow("Original Advance", `$${Number(originalAmount).toLocaleString()}`) : ""}
+        ${paydownPercent != null ? detailRow("Paid Down", `${paydownPercent}%`) : ""}
+        ${renewalAmount ? detailRow("Potential Renewal", `Up to $${(renewalAmount ?? 0).toLocaleString()}`) : detailRow("Potential Renewal", "Contact us to discuss your renewal offer")}
         ${detailRow("Offer Status", "Available Now")}
         ${detailRow("How to Apply", `Call ${CONTACT.phone}`)}
       `)}
@@ -349,13 +382,17 @@ export const templates = {
         <strong>Why renew with Commera?</strong>
       </p>
       <ul style="margin:0 0 20px 0;padding-left:20px;font-size:14px;color:${COLORS.text};line-height:1.8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        <li>Fast approvals — often same or next business day.</li>
+        <li>Fast approvals &mdash; often same or next business day.</li>
         <li>No collateral required.</li>
         <li>Flexible repayment aligned to your revenue.</li>
         <li>Dedicated funding advisor throughout the process.</li>
       </ul>
 
-      ${ctaButton(`Call Us: ${CONTACT.phone}`, `tel:${CONTACT.phone}`)}
+      <p style="margin:0 0 20px 0;font-size:14px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        This offer is available this week. Call us to lock in your rate.
+      </p>
+
+      ${ctaButton(`Call Us: ${CONTACT.phone}`, "tel:+18884515255")}
 
       <p style="margin:24px 0 0 0;font-size:13px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Prefer email? Reach us at
@@ -371,14 +408,14 @@ export const templates = {
   }),
 
   // ─── Template 6: Internal Funding Alert (Rep/Manager) ───────────────────
-  fundingAlert: (repName, merchantName, fundedAmount, fundingDate) => ({
-    subject: `🎉 Deal Funded: ${merchantName}`,
+  fundingAlert: (repName, merchantName, fundedAmount, fundingDate, commissionAmount, lenderName) => ({
+    subject: `Deal Funded: ${merchantName} — $${(fundedAmount ?? 0).toLocaleString()}`,
     content: wrapLayout(`
       <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Congratulations — Deal Funded!
+        Congratulations &mdash; Deal Funded!
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Internal — Funding Confirmation
+        Internal &mdash; Funding Confirmation
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -392,6 +429,8 @@ export const templates = {
         ${detailRow("Merchant", merchantName)}
         ${detailRow("Funded Amount", `$${(fundedAmount ?? 0).toLocaleString()}`)}
         ${detailRow("Funding Date", fundingDate)}
+        ${lenderName ? detailRow("Lender", lenderName) : ""}
+        ${commissionAmount ? detailRow("Your Commission", `$${Number(commissionAmount).toLocaleString()}`) : ""}
         ${detailRow("Status", "Ready for Servicing")}
       `)}
 
@@ -409,40 +448,42 @@ export const templates = {
   }),
 
   // ─── Template 7: Renewal Opportunity Alert (Rep/Manager) ───────────────
-  renewalOpportunity: (repName, merchantName, renewalAmount) => ({
-    subject: `📈 Renewal Opportunity: ${merchantName}`,
+  renewalOpportunity: (repName, merchantName, renewalAmount, merchantPhone, actualFundingDate, paydownPercent) => ({
+    subject: `Renewal Opportunity: ${merchantName} (${paydownPercent || 50}% paid down)`,
     content: wrapLayout(`
       <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:700;color:${COLORS.primary};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Renewal Opportunity Waiting
       </h1>
       <p style="margin:0 0 24px 0;font-size:14px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        Internal — Ready for Outreach
+        Internal &mdash; Ready for Outreach
       </p>
 
       <p style="margin:0 0 16px 0;font-size:16px;color:${COLORS.text};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Hi ${repName},
       </p>
       <p style="margin:0 0 20px 0;font-size:15px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        <strong>${merchantName}</strong> has now paid down 50% of their original funding and is eligible for a renewal. This is a warm lead — call now to capture the deal.
+        <strong>${merchantName}</strong> has now paid down ${paydownPercent || 50}% of their original funding and is eligible for a renewal. This is a warm lead &mdash; call now to capture the deal.
       </p>
 
       ${detailTable(`
         ${detailRow("Merchant", merchantName)}
+        ${detailRow("Phone", merchantPhone ? `<a href="tel:${merchantPhone}" style="color:${COLORS.primary};text-decoration:none;font-weight:600;">${merchantPhone}</a>` : "&mdash;")}
         ${detailRow("Potential Renewal Amount", `Up to $${(renewalAmount ?? 0).toLocaleString()}`)}
+        ${detailRow("Paid Down", `${paydownPercent || 50}%`)}
         ${detailRow("Eligibility Status", "Ready for Outreach")}
-        ${detailRow("Last Funded", new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }))}
+        ${detailRow("Last Funded", actualFundingDate || "&mdash;")}
       `)}
 
       <p style="margin:0 0 12px 0;font-size:14px;color:${COLORS.text};line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <strong>Why this matters:</strong>
       </p>
       <ul style="margin:0 0 20px 0;padding-left:20px;font-size:14px;color:${COLORS.text};line-height:1.8;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        <li>Existing customers are 3× easier to close than new leads.</li>
+        <li>Existing customers are 3&times; easier to close than new leads.</li>
         <li>They already trust Commera and know the process.</li>
-        <li>Act fast — they may shop competing lenders.</li>
+        <li>Act fast &mdash; they may shop competing lenders.</li>
       </ul>
 
-      ${ctaButton("Call Merchant Now", `tel:${CONTACT.phone}`)}
+      ${ctaButton("Call Merchant Now", `tel:${merchantPhone || "#"}`)}
 
       <p style="margin:24px 0 0 0;font-size:13px;color:${COLORS.muted};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         Questions? Contact the team at

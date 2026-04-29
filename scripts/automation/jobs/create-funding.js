@@ -106,7 +106,9 @@ export async function run() {
           });
           if (contact?.Email) {
             const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
-            await sendFundingConfirmation(contact.Email, merchantName, deal.Funded_Amount, fundingDate);
+            const totalRepayment = deal.Payback_Amount || null;
+            const dailyPayment = totalRepayment ? Math.round(totalRepayment / 22) : null;
+            await sendFundingConfirmation(contact.Email, merchantName, deal.Funded_Amount, fundingDate, deal.Factor_Rate || null, totalRepayment, dailyPayment);
           }
         } catch (err) {
           logger.warn({ dealId: deal.id, err: err.message }, 'Failed to send funding confirmation email');
@@ -163,7 +165,7 @@ export async function run() {
           const owner = await crm.users.getById(deal.Owner.id);
           if (owner?.email) {
             const merchantName = `${deal.Contact_Name?.name || 'Merchant'}`;
-            await sendFundingAlert(owner.email, owner.full_name, merchantName, deal.Funded_Amount, fundingDate);
+            await sendFundingAlert(owner.email, owner.full_name, merchantName, deal.Funded_Amount, fundingDate, deal.Estimated_commision || null, deal.Lender?.name || null);
           }
         } catch (err) {
           logger.debug({ dealId: deal.id, err: err.message }, 'Could not send rep funding alert');

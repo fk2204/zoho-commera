@@ -14,16 +14,15 @@ export async function run() {
   const today = new Date().toISOString().split('T')[0];
 
   // Find active Fundings at 50%+ paydown that aren't marked eligible yet
-  // COQL does not support LIKE — filter Funding_status client-side after fetching
-  const allFundings = await crm.coql.queryAll(
-    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status
+  // Use IN with all known active picklist variants — COQL does not support LIKE
+  const fundings = await crm.coql.queryAll(
+    `SELECT id, Name, Paydown, Renewal_Eligible, Merchant, Owner, Funding_status, Original_Funded_Amount, Date_Funded
      FROM Fundings
-     WHERE Paydown >= 50
+     WHERE Funding_status IN ('Active — Performing', 'Active — Slow Pay', 'Active — On Hold')
+     AND Paydown >= 50
      AND Renewal_Eligible = false
      LIMIT 200`
   );
-  // Keep only active fundings (any variant of 'Active — ...')
-  const fundings = allFundings.filter(f => f.Funding_status?.startsWith('Active'));
 
   logger.info({ job: 'renewalCheck', queried: fundings.length }, 'Job started');
 
@@ -75,28 +74,35 @@ export async function run() {
         logger.warn({ fundingId: funding.id }, 'No Renewal record found for eligible Funding');
       }
 
-      // Notify merchant of renewal eligibility
+      // Fetch contact for both merchant email and phone (used in rep notification too)
+      let contact = null;
       if (funding.Merchant?.id) {
         try {
-          const contact = await crm.records.getById('Contacts', funding.Merchant.id, {
-            fields: ['id', 'First_Name', 'Last_Name', 'Email'],
+          contact = await crm.records.getById('Contacts', funding.Merchant.id, {
+            fields: ['id', 'First_Name', 'Last_Name', 'Email', 'Phone'],
           });
-          if (contact?.Email) {
-            const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
-            await sendRenewalEligible(contact.Email, merchantName, renewalAmount);
-          } else {
-            logger.warn({ fundingId: funding.id, contactId: funding.Merchant.id }, 'No email on merchant contact - skipping renewal email');
-          }
+        } catch (err) {
+          logger.warn({ fundingId: funding.id, contactId: funding.Merchant.id }, 'Could not fetch merchant contact');
+        }
+      }
+
+      // Notify merchant of renewal eligibility
+      if (contact?.Email) {
+        try {
+          const merchantName = `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || 'Merchant';
+          await sendRenewalEligible(contact.Email, merchantName, renewalAmount, funding.Original_Funded_Amount || null, funding.Paydown || 50);
         } catch (err) {
           logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send merchant renewal email');
         }
+      } else if (funding.Merchant?.id) {
+        logger.warn({ fundingId: funding.id, contactId: funding.Merchant.id }, 'No email on merchant contact - skipping renewal email');
       }
 
       // Notify assigned rep of renewal opportunity — Owner lookup includes email directly
       if (funding.Owner?.email) {
         try {
           const merchantName = funding.Name || 'Merchant';
-          await sendRenewalOpportunity(funding.Owner.email, funding.Owner.full_name || funding.Owner.name, merchantName, renewalAmount);
+          await sendRenewalOpportunity(funding.Owner.email, funding.Owner.full_name || funding.Owner.name, merchantName, renewalAmount, contact?.Phone || null, funding.Date_Funded || null, funding.Paydown || 50);
         } catch (err) {
           logger.warn({ fundingId: funding.id, err: err.message }, 'Could not send rep renewal alert');
         }

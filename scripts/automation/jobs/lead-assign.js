@@ -29,7 +29,7 @@ export async function run() {
 
   // Get unassigned Leads (Owner not set or empty)
   const unassignedLeads = await crm.coql.queryAll(
-    `SELECT id, Last_Name, First_Name, Amount, Owner
+    `SELECT id, Last_Name, First_Name, Amount, Owner, Phone, Email, Monthly_Revenue_USD, Industry, Time_in_Business_Months, State
      FROM Leads
      WHERE Owner is null
      LIMIT 200`
@@ -65,7 +65,7 @@ export async function run() {
       // Notify the assigned rep via email
       if (rep.email) {
         try {
-          await sendLeadAssigned(rep.email, rep.first_name || rep.full_name, merchantName, lead.Amount ?? 0);
+          await sendLeadAssigned(rep.email, rep.first_name || rep.full_name, merchantName, lead.Amount ?? 0, lead.Phone || null, lead.Email || null, lead.Monthly_Revenue_USD || null, lead.Industry || null, lead.Time_in_Business_Months || null, lead.State || null);
         } catch (err) {
           logger.warn({ leadId: lead.id, repEmail: rep.email, err: err.message }, 'Could not send lead assignment alert');
         }

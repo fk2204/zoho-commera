@@ -13,8 +13,9 @@ const FROM_EMAIL = process.env.ZOHO_SMTP_USER || 'applications@commerafunding.co
  * @param {string} merchantEmail - Merchant's email
  * @param {string} merchantName - Merchant's name
  * @param {string} submissionNumber - Application reference number
+ * @param {number} [requestedAmount] - Amount the merchant applied for
  */
-export async function sendApplicationConfirmation(merchantEmail, merchantName, submissionNumber) {
+export async function sendApplicationConfirmation(merchantEmail, merchantName, submissionNumber, requestedAmount) {
   if (!merchantEmail) {
     logger.warn({ merchantName }, 'No email for merchant - skipping confirmation');
     return false;
@@ -25,7 +26,7 @@ export async function sendApplicationConfirmation(merchantEmail, merchantName, s
     return true;
   }
 
-  const template = templates.applicationConfirmation(merchantName, submissionNumber);
+  const template = templates.applicationConfirmation(merchantName, submissionNumber, requestedAmount);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, merchantEmail, template.subject, template.content);
 
   if (sent) {
@@ -43,8 +44,12 @@ export async function sendApplicationConfirmation(merchantEmail, merchantName, s
  * @param {string} merchantName - Merchant's name
  * @param {string} submissionNumber - Application reference
  * @param {string} repName - Rep's name
+ * @param {string} [merchantPhone] - Merchant's phone number
+ * @param {string} [merchantEmail] - Merchant's email address
+ * @param {number} [monthlyRevenue] - Merchant's monthly revenue
+ * @param {string} [industry] - Merchant's industry
  */
-export async function sendNewApplicationAlert(repEmail, merchantName, submissionNumber, repName) {
+export async function sendNewApplicationAlert(repEmail, merchantName, submissionNumber, repName, merchantPhone, merchantEmail, monthlyRevenue, industry) {
   if (!repEmail) {
     logger.warn({ merchantName }, 'No email for rep - skipping alert');
     return false;
@@ -55,7 +60,7 @@ export async function sendNewApplicationAlert(repEmail, merchantName, submission
     return true;
   }
 
-  const template = templates.newApplicationAlert(merchantName, submissionNumber, repName);
+  const template = templates.newApplicationAlert(merchantName, submissionNumber, repName, merchantPhone, merchantEmail, monthlyRevenue, industry);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
 
   if (sent) {
@@ -73,8 +78,11 @@ export async function sendNewApplicationAlert(repEmail, merchantName, submission
  * @param {string} merchantName - Merchant's name
  * @param {number} fundingAmount - Funded amount
  * @param {string} fundingDate - Expected funding date (YYYY-MM-DD)
+ * @param {number} [factorRate] - Factor rate applied to the advance
+ * @param {number} [totalRepayment] - Total repayment amount
+ * @param {number} [dailyPayment] - Estimated daily payment amount
  */
-export async function sendFundingConfirmation(merchantEmail, merchantName, fundingAmount, fundingDate) {
+export async function sendFundingConfirmation(merchantEmail, merchantName, fundingAmount, fundingDate, factorRate, totalRepayment, dailyPayment) {
   if (!merchantEmail) {
     logger.warn({ merchantName }, 'No email for merchant - skipping funding confirmation');
     return false;
@@ -85,7 +93,7 @@ export async function sendFundingConfirmation(merchantEmail, merchantName, fundi
     return true;
   }
 
-  const template = templates.fundingConfirmation(merchantName, fundingAmount, fundingDate);
+  const template = templates.fundingConfirmation(merchantName, fundingAmount, fundingDate, factorRate, totalRepayment, dailyPayment);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, merchantEmail, template.subject, template.content);
 
   if (sent) {
@@ -103,8 +111,14 @@ export async function sendFundingConfirmation(merchantEmail, merchantName, fundi
  * @param {string} repName - Rep's name
  * @param {string} merchantName - Merchant's name
  * @param {number} leadAmount - Requested funding amount
+ * @param {string} [merchantPhone] - Merchant's phone number
+ * @param {string} [merchantEmail] - Merchant's email address
+ * @param {number} [monthlyRevenue] - Merchant's monthly revenue
+ * @param {string} [industry] - Merchant's industry
+ * @param {number} [timeInBusiness] - Months the merchant has been in business
+ * @param {string} [businessState] - State where the business is located
  */
-export async function sendLeadAssigned(repEmail, repName, merchantName, leadAmount) {
+export async function sendLeadAssigned(repEmail, repName, merchantName, leadAmount, merchantPhone, merchantEmail, monthlyRevenue, industry, timeInBusiness, businessState) {
   if (!repEmail) {
     logger.warn({ repName, merchantName }, 'No email for rep - skipping lead assignment alert');
     return false;
@@ -115,7 +129,7 @@ export async function sendLeadAssigned(repEmail, repName, merchantName, leadAmou
     return true;
   }
 
-  const template = templates.leadAssigned(repName, merchantName, leadAmount);
+  const template = templates.leadAssigned(repName, merchantName, leadAmount, merchantPhone, merchantEmail, monthlyRevenue, industry, timeInBusiness, businessState);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
 
   if (sent) {
@@ -132,8 +146,10 @@ export async function sendLeadAssigned(repEmail, repName, merchantName, leadAmou
  * @param {string} merchantEmail - Merchant's email
  * @param {string} merchantName - Merchant's name
  * @param {number} renewalAmount - Potential renewal amount
+ * @param {number} [originalAmount] - Original funded amount
+ * @param {number} [paydownPercent] - Percentage of original advance paid down
  */
-export async function sendRenewalEligible(merchantEmail, merchantName, renewalAmount) {
+export async function sendRenewalEligible(merchantEmail, merchantName, renewalAmount, originalAmount, paydownPercent) {
   if (!merchantEmail) {
     logger.warn({ merchantName }, 'No email for merchant - skipping renewal notification');
     return false;
@@ -144,7 +160,7 @@ export async function sendRenewalEligible(merchantEmail, merchantName, renewalAm
     return true;
   }
 
-  const template = templates.renewalEligible(merchantName, renewalAmount);
+  const template = templates.renewalEligible(merchantName, renewalAmount, originalAmount, paydownPercent);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, merchantEmail, template.subject, template.content);
 
   if (sent) {
@@ -163,8 +179,10 @@ export async function sendRenewalEligible(merchantEmail, merchantName, renewalAm
  * @param {string} merchantName - Merchant's name
  * @param {number} fundedAmount - Amount funded
  * @param {string} fundingDate - Funding date (YYYY-MM-DD)
+ * @param {number} [commissionAmount] - Rep's commission for this deal
+ * @param {string} [lenderName] - Name of the lender who funded the deal
  */
-export async function sendFundingAlert(repEmail, repName, merchantName, fundedAmount, fundingDate) {
+export async function sendFundingAlert(repEmail, repName, merchantName, fundedAmount, fundingDate, commissionAmount, lenderName) {
   if (!repEmail) {
     logger.warn({ repName, merchantName }, 'No email for rep - skipping funding alert');
     return false;
@@ -175,7 +193,7 @@ export async function sendFundingAlert(repEmail, repName, merchantName, fundedAm
     return true;
   }
 
-  const template = templates.fundingAlert(repName, merchantName, fundedAmount, fundingDate);
+  const template = templates.fundingAlert(repName, merchantName, fundedAmount, fundingDate, commissionAmount, lenderName);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
 
   if (sent) {
@@ -193,8 +211,11 @@ export async function sendFundingAlert(repEmail, repName, merchantName, fundedAm
  * @param {string} repName - Rep's name
  * @param {string} merchantName - Merchant's name
  * @param {number} renewalAmount - Potential renewal amount
+ * @param {string} [merchantPhone] - Merchant's phone number
+ * @param {string} [actualFundingDate] - Date the merchant was originally funded
+ * @param {number} [paydownPercent] - Percentage of original advance paid down
  */
-export async function sendRenewalOpportunity(repEmail, repName, merchantName, renewalAmount) {
+export async function sendRenewalOpportunity(repEmail, repName, merchantName, renewalAmount, merchantPhone, actualFundingDate, paydownPercent) {
   if (!repEmail) {
     logger.warn({ repName, merchantName }, 'No email for rep - skipping renewal opportunity alert');
     return false;
@@ -205,7 +226,7 @@ export async function sendRenewalOpportunity(repEmail, repName, merchantName, re
     return true;
   }
 
-  const template = templates.renewalOpportunity(repName, merchantName, renewalAmount);
+  const template = templates.renewalOpportunity(repName, merchantName, renewalAmount, merchantPhone, actualFundingDate, paydownPercent);
   const sent = await sendEmailViaSMTP(FROM_EMAIL, repEmail, template.subject, template.content);
 
   if (sent) {
