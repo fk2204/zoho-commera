@@ -1,0 +1,37 @@
+PHASE 3: MANUAL ZOHO UI CONFIGURATION TASKS
+
+1. Lead Scoring Rules
+   Location: Setup → Automation → Scoring Rules
+   Create rule with 11 categories, 43 criteria
+
+2. Blueprint for Deal Pipeline
+   Location: Setup → Process Management → Blueprint → Deals
+   Configure 14 stages with required fields per transition
+
+3. Define Offers Module
+   Location: Setup → Modules & Fields → Offers
+   Add fields: Lender, Deal, Factor_Rate, Offered_Amount, Repayment_Term, Commission_Pct, Status, Date_Offered, Date_Expires, Notes
+
+4. Define Stips Module
+   Location: Setup → Modules & Fields → Stips
+   Add fields: Deal, Lender, Stip_Name, Status, Date_Requested, Due_Date, Date_Received, Document_Type, Severity, Notes
+
+5. Define DealHistory Module
+   Location: Setup → Modules & Fields → DealHistory
+   Use native Audit Trail or create manual tracking module
+
+6. Verify Commissions Module API Name
+   Location: Setup → Modules & Fields → Modules List
+   Find Commissions module, note exact API Name
+
+7. Create 5 Core CRM Reports
+   Location: Reports → Create Report
+   - Pipeline by Stage
+   - Funded This Month
+   - Renewal Pipeline
+   - Rep Performance
+   - Stalled Deals
+
+8. Zoho Sign Contract Template
+   Location: Zoho Sign → Templates
+   Create MCA Funding Agreement template with signature fields

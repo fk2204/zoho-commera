@@ -14,12 +14,22 @@
     "run": "node scripts/automation/run-all.js",
     "run:dry": "cross-env DRY_RUN=true node scripts/automation/run-all.js",
     "scheduler": "node scripts/automation/scheduler.js",
+    "scheduler:start": "pm2 start ecosystem.config.cjs",
+    "scheduler:stop": "pm2 stop commera-scheduler",
+    "scheduler:status": "pm2 status commera-scheduler",
+    "scheduler:logs": "pm2 logs commera-scheduler --lines 50",
+    "scheduler:restart": "pm2 restart commera-scheduler",
+    "scheduler:save": "pm2 save && pm2 startup",
     "send-app-confirmation": "node -e \"import('./scripts/automation/jobs/send-application-confirmation.js').then(m => m.run())\"",
     "lead-score": "node -e \"import('./scripts/automation/jobs/lead-score.js').then(m => m.run())\"",
     "tib-band": "node -e \"import('./scripts/automation/jobs/tib-band.js').then(m => m.run())\"",
     "days-to-fund": "node -e \"import('./scripts/automation/jobs/days-to-fund.js').then(m => m.run())\"",
     "lead-assign": "node -e \"import('./scripts/automation/jobs/lead-assign.js').then(m => m.run())\"",
-    "match-lenders": "node -e \"import('./scripts/automation/jobs/match-lenders.js').then(m => m.run())\""
+    "match-lenders": "node -e \"import('./scripts/automation/jobs/match-lenders.js').then(m => m.run())\"",
+    "commission-invoice": "node --input-type=module -e \"import('./scripts/automation/jobs/commission-invoice.js').then(m => m.run()).then(r => process.exit(r.errors > 0 ? 1 : 0))\"",
+    "merchant-ticket": "node --input-type=module -e \"import('./scripts/automation/jobs/merchant-ticket.js').then(m => m.run()).then(r => process.exit(r.errors > 0 ? 1 : 0))\"",
+    "add-to-nurture": "node --input-type=module -e \"import('./scripts/automation/jobs/add-to-nurture.js').then(m => m.run()).then(r => process.exit(r.errors > 0 ? 1 : 0))\"",
+    "funding-project": "node --input-type=module -e \"import('./scripts/automation/jobs/funding-project.js').then(m => m.run()).then(r => process.exit(r.errors > 0 ? 1 : 0))\""
   },
   "dependencies": {
     "dotenv": "^16.4.5",

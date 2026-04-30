@@ -17,6 +17,10 @@ import { run as renewalCheck } from './jobs/renewal-check.js';
 import { run as daysToFund } from './jobs/days-to-fund.js';
 import { run as matchLenders } from './jobs/match-lenders.js';
 import { run as leadAssign } from './jobs/lead-assign.js';
+import { run as commissionInvoice } from './jobs/commission-invoice.js';
+import { run as merchantTicket }    from './jobs/merchant-ticket.js';
+import { run as addToNurture }      from './jobs/add-to-nurture.js';
+import { run as fundingProject }    from './jobs/funding-project.js';
 
 const JOBS = [
   { name: 'sendApplicationConfirmation', fn: sendApplicationConfirmation, stateKey: 'sendApplicationConfirmation' },
@@ -30,6 +34,10 @@ const JOBS = [
   { name: 'renewalCheck',  fn: renewalCheck,  stateKey: 'renewalCheck' },
   { name: 'daysToFund',    fn: daysToFund,    stateKey: 'daysToFund' },
   { name: 'leadAssign',    fn: leadAssign,    stateKey: 'leadAssignIndex', managesOwnState: true },
+  { name: 'commissionInvoice', fn: commissionInvoice, stateKey: 'commissionInvoice' },
+  { name: 'merchantTicket',    fn: merchantTicket,    stateKey: 'merchantTicket' },
+  { name: 'addToNurture',      fn: addToNurture,      stateKey: 'addToNurture' },
+  { name: 'fundingProject',    fn: fundingProject,    stateKey: 'fundingProject' },
 ];
 
 export async function runAll() {

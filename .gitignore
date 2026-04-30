@@ -9,7 +9,7 @@ tokens.json
 # Logs
 *.log
 audit.log
-logs/
+logs/*.log
 
 # Node
 node_modules/

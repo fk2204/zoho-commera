@@ -6,6 +6,12 @@ Programmatic control of **Zoho One** via REST APIs, orchestrated through Claude 
 
 This is the API control layer. Business logic — what you actually do with the data — lives in `scripts/` files you (or Claude Code) author.
 
+### Active Directory
+
+- **Live working directory:** `C:\Users\fkozi\zoho commera`
+- **Git-tracked directory:** `C:\Users\fkozi\zoho-commera-git`
+- Always work in the active directory for immediate changes
+
 ## Tech Stack
 
 - **Runtime:** Node.js 20+ (ESM)
@@ -47,9 +53,12 @@ If consent fails because your Zoho One plan doesn't include some apps, drop a ti
 ## Architecture
 
 ```
-scripts/*.js                       ← Claude Code writes/runs these
-        │
-        ▼
+scripts/*.js (14 jobs)             ← Claude Code writes/runs these
+        │                           • commission-invoice.js
+        │                           • merchant-ticket.js
+        │                           • add-to-nurture.js
+        │                           • funding-project.js
+        ▼                           (+ 10 existing automation jobs)
 src/{app}/index.js                 ← per-app helpers (CRUD, etc.)
         │
         ▼
@@ -118,6 +127,9 @@ npm run setup:oauth -- --minimal  # just CRM + profile
 npm run setup:oauth -- --full     # all 11 apps
 npm run test:connection           # probes all configured apps
 npm run refresh-token             # debug auth
+npm run scheduler:start           # start the automation scheduler
+npm run scheduler:status          # check scheduler status
+npm run scheduler:logs            # view scheduler logs
 node scripts/<your-script>.js
 ```
 

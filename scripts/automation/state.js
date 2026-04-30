@@ -22,6 +22,10 @@ const DEFAULT_STATE = {
     renewalCheck: null,
     daysToFund: null,
     leadAssignIndex: '0',
+    commissionInvoice: null,
+    merchantTicket: null,
+    addToNurture: null,
+    fundingProject: null,
   },
 };
 
