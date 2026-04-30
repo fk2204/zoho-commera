@@ -1,10 +1,7 @@
-import config from "../../config.js";
-import { crm } from "../../crm/index.js";
-import { projects } from "../../projects/index.js";
-import { getLogger } from "../../utils/logger.js";
-import { auditLogger } from "../../utils/auditLogger.js";
-
-const logger = getLogger("fundingProject");
+import { config } from "../../../src/config.js";
+import * as crm from "../../../src/crm/index.js";
+import * as projects from "../../../src/projects/index.js";
+import { logger, auditLogger } from "../../../src/utils/logger.js";
 
 const STANDARD_TASKS = [
   { title: "Collect signed contract", daysFromFunding: 1 },
@@ -66,9 +63,8 @@ export async function run() {
               const dueDate = new Date(fundedDate);
               dueDate.setDate(dueDate.getDate() + task.daysFromFunding);
 
-              await projects.createTask({
-                project_id: projectId,
-                title: task.title,
+              await projects.createTask(projectId, {
+                name: task.title,
                 description: `Auto-created for onboarding. Due ${task.daysFromFunding} day(s) from funding.`,
                 due_date: dueDate.toISOString().split("T")[0],
                 status: "Open",
@@ -91,9 +87,7 @@ export async function run() {
           }
 
           // Update funding with project ID
-          await crm.records.update("Fundings", funding.id, {
-            Projects_Project_ID: projectId,
-          });
+          await crm.records.update("Fundings", [{ id: funding.id, Projects_Project_ID: projectId }]);
 
           auditLogger.info({
             op: "fundingProject",

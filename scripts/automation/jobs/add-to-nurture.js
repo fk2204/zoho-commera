@@ -1,10 +1,7 @@
-import config from "../../config.js";
-import { crm } from "../../crm/index.js";
-import { campaigns } from "../../campaigns/index.js";
-import { getLogger } from "../../utils/logger.js";
-import { auditLogger } from "../../utils/auditLogger.js";
-
-const logger = getLogger("addToNurture");
+import { config } from "../../../src/config.js";
+import * as crm from "../../../src/crm/index.js";
+import * as campaigns from "../../../src/campaigns/index.js";
+import { logger, auditLogger } from "../../../src/utils/logger.js";
 
 export async function run() {
   const startTime = Date.now();
@@ -69,9 +66,7 @@ export async function run() {
           });
 
           // Update lead with Campaigns_Added date
-          await crm.records.update("Leads", lead.id, {
-            Campaigns_Added: new Date().toISOString().split("T")[0],
-          });
+          await crm.records.update("Leads", [{ id: lead.id, Campaigns_Added: new Date().toISOString().split("T")[0] }]);
 
           auditLogger.info({
             op: "addToNurture",
